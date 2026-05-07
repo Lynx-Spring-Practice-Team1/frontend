@@ -1,16 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createChart, CandlestickSeries } from 'lightweight-charts';
 import { useMarketData, TICKERS } from '../context/MarketDataContext';
 
-const TradingChart = ({ isDark = false }) => {
+const TradingChart = ({ isDark = false, activeTicker = 'AAPL', onTickerChange, height = 400 }) => {
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const seriesRef = useRef(null);
-
-    const [activeTicker, setActiveTicker] = useState('AAPL');
-    const activeTickerRef = useRef('AAPL');
+    const activeTickerRef = useRef(activeTicker);
 
     const { latestUpdate, getCandleData } = useMarketData();
+
+    const colors = {
+        light: { textColor: '#333333', background: '#e8e8e8' },
+        dark:  { textColor: '#d1d5db', background: 'transparent' },
+    };
+    const currentColors = isDark ? colors.dark : colors.light;
 
     const tickerButtonStyle = {
         fontFamily: 'sans-serif',
@@ -25,19 +29,21 @@ const TradingChart = ({ isDark = false }) => {
         cursor: 'pointer',
     };
 
-    const colors = {
-        light: { textColor: '#333333', background: '#ffffff' },
-        dark: { textColor: '#d1d5db', background: 'transparent' },
-    };
-    const currentColors = isDark ? colors.dark : colors.light;
-
     const tickerButtonActiveStyle = {
-        backgroundColor: isDark ? '#3d2e26' : 'rgb(235, 219, 211)',
-        color: isDark ? '#ffffff' : 'rgb(51, 51, 51)',
         borderColor: '#d9774a',
     };
 
-    // Initialize chart once and load any persisted candles
+    const goToRealtimeStyle = {
+        fontFamily: 'sans-serif',
+        fontSize: '14px',
+        padding: '6px 20px',
+        backgroundColor: isDark ? '#2a2a2a' : '#f0f3fa',
+        color: isDark ? '#d1d5db' : '#333',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+    };
+
     useEffect(() => {
         chartRef.current = createChart(chartContainerRef.current, {
             layout: {
@@ -48,7 +54,7 @@ const TradingChart = ({ isDark = false }) => {
                 timeVisible: true,
                 secondsVisible: false,
             },
-            height: 300,
+            height: height,
             width: chartContainerRef.current.clientWidth,
         });
 
@@ -67,7 +73,9 @@ const TradingChart = ({ isDark = false }) => {
         }
 
         const handleResize = () => {
-            chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
+            if (chartRef.current && chartContainerRef.current) {
+                chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
+            }
         };
         window.addEventListener('resize', handleResize);
 
@@ -77,7 +85,6 @@ const TradingChart = ({ isDark = false }) => {
         };
     }, []);
 
-    // Sync theme changes
     useEffect(() => {
         chartRef.current?.applyOptions({
             layout: {
@@ -87,71 +94,51 @@ const TradingChart = ({ isDark = false }) => {
         });
     }, [isDark, currentColors.textColor, currentColors.background]);
 
-    // Forward live candle updates from the context to the chart series
+    useEffect(() => {
+        chartRef.current?.applyOptions({ height });
+    }, [height]);
+
     useEffect(() => {
         if (!latestUpdate || latestUpdate.ticker !== activeTickerRef.current) return;
         seriesRef.current?.update(latestUpdate.candle);
     }, [latestUpdate]);
 
-    const handleTickerChange = (ticker) => {
-        activeTickerRef.current = ticker;
-        setActiveTicker(ticker);
-
+    useEffect(() => {
+        if (activeTicker === activeTickerRef.current) return;
+        activeTickerRef.current = activeTicker;
         if (!seriesRef.current) return;
-
-        seriesRef.current.setData(getCandleData(ticker));
-        chartRef.current.timeScale().fitContent();
-    };
-
-    const handleGoToRealtime = () => {
-        chartRef.current?.timeScale().scrollToRealTime();
-    };
+        seriesRef.current.setData(getCandleData(activeTicker));
+        chartRef.current?.timeScale().fitContent();
+    }, [activeTicker]);
 
     return (
         <div style={{ position: 'relative', width: '100%' }}>
-            <div style={tickerButtonContainerStyle}>
-                {TICKERS.map((ticker) => (
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                {TICKERS.map(ticker => (
                     <button
                         key={ticker}
-                        style={activeTicker === ticker
-                            ? { ...tickerButtonStyle, ...tickerButtonActiveStyle }
-                            : tickerButtonStyle}
-                        onClick={() => handleTickerChange(ticker)}
+                        style={
+                            activeTicker === ticker
+                                ? { ...tickerButtonStyle, ...tickerButtonActiveStyle }
+                                : tickerButtonStyle
+                        }
+                        onClick={() => onTickerChange?.(ticker)}
                     >
                         {ticker}
                     </button>
                 ))}
             </div>
             <div ref={chartContainerRef} />
-            <div style={buttonContainerStyle}>
-                <button style={buttonStyle} onClick={handleGoToRealtime}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <button
+                    style={goToRealtimeStyle}
+                    onClick={() => chartRef.current?.timeScale().scrollToRealTime()}
+                >
                     Go to realtime
                 </button>
             </div>
         </div>
     );
-};
-
-const tickerButtonContainerStyle = {
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '10px',
-};
-
-const buttonContainerStyle = {
-    display: 'flex',
-    gap: '8px',
-    marginTop: '10px',
-};
-
-const buttonStyle = {
-    fontFamily: 'sans-serif',
-    fontSize: '16px',
-    padding: '8px 24px',
-    backgroundColor: '#f0f3fa',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
 };
 
 export default TradingChart;

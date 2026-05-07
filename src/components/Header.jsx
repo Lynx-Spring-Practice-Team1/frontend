@@ -1,16 +1,27 @@
-import { Search, Sun, Moon, UserCircle } from 'lucide-react';
+import { Menu, Search, Sun, Moon, UserCircle } from 'lucide-react';
 
-export default function Header({ isDark, onToggleDark }) {
+export default function Header({ isDark, onToggleDark, onOpenMobileMenu }) {
   return (
-    <header className="flex items-center justify-between w-full px-6 py-2 bg-[#f9f9f9] dark:bg-[#1a1a1a] border-b border-gray-300 dark:border-gray-700 font-mono transition-colors duration-200">
+    <header className="flex items-center justify-between w-full px-4 sm:px-6 py-2 bg-[#f0f0f0] dark:bg-[#1a1a1a] border-b border-gray-300 dark:border-gray-700 font-mono transition-colors duration-200">
 
-      {/* Left: Logo and Search */}
-      <div className="flex items-center gap-8 flex-1">
-        <h1 className="text-xl font-black italic tracking-tighter text-gray-800 dark:text-gray-100 select-none">
+      {/* Left: hamburger (mobile) / brand (desktop) + search */}
+      <div className="flex items-center gap-3 sm:gap-6 flex-1 min-w-0">
+
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onOpenMobileMenu}
+          className="lg:hidden h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shrink-0"
+          aria-label="Open menu"
+        >
+          <Menu size={18} />
+        </button>
+
+        {/* Brand — desktop only */}
+        <h1 className="hidden lg:block text-xl font-black italic tracking-tighter text-gray-800 dark:text-gray-100 select-none shrink-0">
           Wall Street
         </h1>
 
-        <div className="relative w-full max-w-md">
+        <div className="relative w-full max-w-md min-w-0">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
             size={16}
@@ -23,10 +34,8 @@ export default function Header({ isDark, onToggleDark }) {
         </div>
       </div>
 
-      {/* Right: Market Status & Toggle & User */}
-      <div className="flex items-center gap-4">
-
-        {/* Dark mode toggle */}
+      {/* Right: status indicator, dark toggle, profile */}
+      <div className="flex items-center gap-2 sm:gap-4 ml-3">
         <button
           onClick={onToggleDark}
           className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -35,15 +44,12 @@ export default function Header({ isDark, onToggleDark }) {
           {isDark ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-[#34a853] shadow-[0_0_8px_rgba(52,168,83,0.5)]"></div>
-        </div>
-        {/* Profile Placeholder */}
+
         <button
-          className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-          // onClick={togleSignOut}
+          className="relative h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         >
           <UserCircle size={20} />
+          <div className="h-2 w-2 rounded-full bg-[#34a853] shadow-[0_0_8px_rgba(52,168,83,0.5)] absolute bottom-0 right-0" />
         </button>
       </div>
 
