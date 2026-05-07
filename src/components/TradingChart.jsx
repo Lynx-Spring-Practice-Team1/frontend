@@ -8,7 +8,7 @@ const TradingChart = ({ isDark = false, activeTicker = 'AAPL', onTickerChange, h
     const seriesRef = useRef(null);
     const activeTickerRef = useRef(activeTicker);
 
-    const { latestUpdate, getCandleData } = useMarketData();
+    const { latestUpdate, getCandleData, historyLoaded } = useMarketData();
 
     const colors = {
         light: { textColor: '#333333', background: '#e8e8e8' },
@@ -84,6 +84,15 @@ const TradingChart = ({ isDark = false, activeTicker = 'AAPL', onTickerChange, h
             chartRef.current.remove();
         };
     }, []);
+
+    useEffect(() => {
+        if (!historyLoaded || !seriesRef.current) return;
+        const data = getCandleData(activeTickerRef.current);
+        if (data.length > 0) {
+            seriesRef.current.setData(data);
+            chartRef.current?.timeScale().fitContent();
+        }
+    }, [historyLoaded]);
 
     useEffect(() => {
         chartRef.current?.applyOptions({

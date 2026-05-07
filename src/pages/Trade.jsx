@@ -21,18 +21,21 @@ function useChartHeight() {
 
 export default function Trade({ isDark }) {
     const [activeTicker, setActiveTicker] = useState('AAPL');
-    const { latestUpdate, getCandleData } = useMarketData();
+    const { latestUpdate, getCandleData, historyLoaded } = useMarketData();
     const chartHeight = useChartHeight();
 
-    const [candles, setCandles] = useState(() => {
+    const [candles, setCandles] = useState({});
+
+    useEffect(() => {
+        if (!historyLoaded) return;
         const init = {};
         for (const t of TICKERS) {
             const data = getCandleData(t);
             const last = data[data.length - 1];
             if (last) init[t] = last;
         }
-        return init;
-    });
+        setCandles(init);
+    }, [historyLoaded]);
 
     useEffect(() => {
         if (!latestUpdate) return;
