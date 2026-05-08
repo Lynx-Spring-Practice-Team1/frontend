@@ -14,7 +14,7 @@ export default function AppRoutes({ isDark }) {
       <Route path="/trade"     element={<Trade isDark={isDark} />} />
       <Route path="/watchlist" element={<Watchlist />} />
       <Route path="/portfolio" element={<Portfolio />} />
-      <Route path="/orders"    element={<Orders />} />
+      <Route path="/orders"    element={<Orders isDark={isDark} />} />
       <Route path="/research"  element={<Research />} />
       <Route path="/account"   element={<Account />} />
       <Route path="*"          element={<Navigate to="/" replace />} />
