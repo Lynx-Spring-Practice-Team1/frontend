@@ -6,6 +6,7 @@ import Portfolio from '../pages/Portfolio';
 import Orders from '../pages/Orders';
 import Research from '../pages/Research';
 import Account from '../pages/Account';
+import AuthPage from '../pages/AuthPage';
 
 export default function AppRoutes({ isDark }) {
   return (
@@ -17,6 +18,8 @@ export default function AppRoutes({ isDark }) {
       <Route path="/orders"    element={<Orders isDark={isDark} />} />
       <Route path="/research"  element={<Research />} />
       <Route path="/account"   element={<Account />} />
+      <Route path="/login"     element={<AuthPage />} />
+      <Route path="/signup"    element={<AuthPage />} />
       <Route path="*"          element={<Navigate to="/" replace />} />
     </Routes>
   );
