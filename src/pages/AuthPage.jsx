@@ -16,6 +16,7 @@ export default function AuthPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [errors, setErrors] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     const next = location.pathname === '/signup' ? 'signup' : 'login'
@@ -44,38 +45,70 @@ export default function AuthPage() {
     return regex.test(email)
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const newErrors = {}
-    
-    if (mode === 'signup') {
-      if (!form.email || !isValidEmail(form.email)) {
-        newErrors.email = 'Please enter a valid email address'
-      }
-      if (!form.password || form.password.length < 6) {
-        newErrors.password = 'Password must be at least 6 characters'
-      }
-      if (form.password !== form.confirm) {
-        newErrors.confirm = 'Passwords do not match'
-      }
-    } else {
-      if (!form.email || !isValidEmail(form.email)) {
-        newErrors.email = 'Please enter a valid email address'
-      }
-    }
+ const handleSubmit = async (e) => { 
+  e.preventDefault();
+  const newErrors = {};
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
-
-    setErrors({})
-    // TODO: Submit form to backend
+  // --- Validation Logic ---
+  if (!form.email || !isValidEmail(form.email)) {
+    newErrors.email = 'Please enter a valid email address';
   }
+
+  if (mode === 'signup') {
+    if (!form.name || form.name.trim() === '') {
+      newErrors.name = 'Full name is required';
+    }
+    if (!form.password || form.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    if (form.password !== form.confirm) {
+      newErrors.confirm = 'Passwords do not match';
+    }
+  } else {
+    // For login, just check if password exists
+    if (!form.password) {
+      newErrors.password = 'Password is required';
+    }
+  }
+
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+
+  // Send to API Getaway
+  setErrors({});
+  setIsLoading(true);
+
+  const isSignup = mode === 'signup';
+  const endpoint = isSignup ? '/auth/signup' : '/auth/signin';
+  const url = `http://localhost:8000${endpoint}`;
+
+  const payload = isSignup 
+    ? { name: form.name, email: form.email, password: form.password }
+    : { email: form.email, password: form.password };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    console.log('API Response:', data);
+    
+  } catch (err) {
+    setErrors({ server: 'Connection error. Is the server running?' });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5] dark:bg-[#111111] p-4 transition-colors duration-200">
-      <div className="w-full max-w-[380px]">
+      <div className="w-full max-w-95">
 
         <AuthLogo />
 

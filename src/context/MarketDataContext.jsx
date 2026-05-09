@@ -71,68 +71,90 @@ export function MarketDataProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const ws = new WebSocket(WS_URL);
+    let ws = null;
+    let reconnectTimer = null;
+    let active = true;
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
-        type: 'SUBSCRIBE',
-        payload: { channel: 'PRICE_FEED', tickers: TICKERS },
-      }));
-    };
+    function connect() {
+      ws = new WebSocket(WS_URL);
 
-    ws.onmessage = (event) => {
-      let msg;
-      try { msg = JSON.parse(event.data); } catch { return; }
+      ws.onopen = () => {
+        ws.send(JSON.stringify({
+          type: 'SUBSCRIBE',
+          payload: { channel: 'PRICE_FEED', tickers: TICKERS },
+        }));
+      };
 
-      if (msg.type !== 'PRICE_UPDATE') return;
+      ws.onmessage = (event) => {
+        let msg;
+        try { msg = JSON.parse(event.data); } catch { return; }
 
-      const { ticker, price, market_time } = msg.payload ?? {};
-      if (!ticker || price == null || !market_time) return;
-      if (!TICKERS.includes(ticker)) return;
+        if (msg.type !== 'PRICE_UPDATE') return;
 
-      const bucketSec = bucketTime(market_time);
-      const current   = currentCandleRef.current[ticker];
+        const { ticker, price, market_time } = msg.payload ?? {};
+        if (!ticker || price == null || !market_time) return;
+        if (!TICKERS.includes(ticker)) return;
 
-      if (!current || current.time !== bucketSec) {
-        if (current) {
-          // Candle finalized — persist immediately
-          upsertCandle(ticker, current);
-          candleHistoryRef.current[ticker] = [
-            ...candleHistoryRef.current[ticker],
-            current,
-          ];
+        const bucketSec = bucketTime(market_time);
+        const current   = currentCandleRef.current[ticker];
+
+        if (!current || current.time !== bucketSec) {
+          if (current) {
+            // Candle finalized — persist immediately
+            upsertCandle(ticker, current);
+            candleHistoryRef.current[ticker] = [
+              ...candleHistoryRef.current[ticker],
+              current,
+            ];
+          }
+          currentCandleRef.current[ticker] = {
+            time:  bucketSec,
+            open:  price,
+            high:  price,
+            low:   price,
+            close: price,
+          };
+        } else {
+          currentCandleRef.current[ticker] = {
+            ...current,
+            high:  Math.max(current.high, price),
+            low:   Math.min(current.low,  price),
+            close: price,
+          };
         }
-        currentCandleRef.current[ticker] = {
-          time:  bucketSec,
-          open:  price,
-          high:  price,
-          low:   price,
-          close: price,
-        };
-      } else {
-        currentCandleRef.current[ticker] = {
-          ...current,
-          high:  Math.max(current.high, price),
-          low:   Math.min(current.low,  price),
-          close: price,
-        };
-      }
 
-      setLatestUpdate({ ticker, candle: currentCandleRef.current[ticker] });
+        setLatestUpdate({ ticker, candle: currentCandleRef.current[ticker] });
 
-      // Persist in-progress candles every 30 s so we survive a page refresh
-      const now = Date.now();
-      if (now - lastDbSaveRef.current > 30_000) {
-        for (const t of TICKERS) {
-          const c = currentCandleRef.current[t];
-          if (c) upsertCandle(t, c);
+        // Persist in-progress candles every 30 s so we survive a page refresh
+        const now = Date.now();
+        if (now - lastDbSaveRef.current > 30_000) {
+          for (const t of TICKERS) {
+            const c = currentCandleRef.current[t];
+            if (c) upsertCandle(t, c);
+          }
+          lastDbSaveRef.current = now;
         }
-        lastDbSaveRef.current = now;
+      };
+
+      ws.onerror = (err) => console.error('WebSocket error:', err);
+
+      ws.onclose = () => {
+        if (!active) return;
+        reconnectTimer = setTimeout(connect, 3000);
+      };
+    }
+
+    connect();
+
+    return () => {
+      active = false;
+      clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.onerror = null;
+        ws.onclose = null;
+        ws.close();
       }
     };
-
-    ws.onerror = (err) => console.error('WebSocket error:', err);
-    return () => ws.close();
   }, []);
 
   function getCandleData(ticker) {
