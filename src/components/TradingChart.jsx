@@ -68,7 +68,7 @@ const TradingChart = ({ isDark = false, activeTicker = 'AAPL', onTickerChange, h
 
         const initial = getCandleData(activeTickerRef.current);
         if (initial.length > 0) {
-            seriesRef.current.setData(initial);
+            seriesRef.current.setData(initial.map(c => ({ ...c })));
             chartRef.current.timeScale().fitContent();
         }
 
@@ -89,7 +89,7 @@ const TradingChart = ({ isDark = false, activeTicker = 'AAPL', onTickerChange, h
         if (!historyLoaded || !seriesRef.current) return;
         const data = getCandleData(activeTickerRef.current);
         if (data.length > 0) {
-            seriesRef.current.setData(data);
+            seriesRef.current.setData(data.map(c => ({ ...c })));
             chartRef.current?.timeScale().fitContent();
         }
     }, [historyLoaded]);
@@ -109,14 +109,14 @@ const TradingChart = ({ isDark = false, activeTicker = 'AAPL', onTickerChange, h
 
     useEffect(() => {
         if (!latestUpdate || latestUpdate.ticker !== activeTickerRef.current) return;
-        seriesRef.current?.update(latestUpdate.candle);
+        seriesRef.current?.update({ ...latestUpdate.candle });
     }, [latestUpdate]);
 
     useEffect(() => {
         if (activeTicker === activeTickerRef.current) return;
         activeTickerRef.current = activeTicker;
         if (!seriesRef.current) return;
-        seriesRef.current.setData(getCandleData(activeTicker));
+        seriesRef.current.setData(getCandleData(activeTicker).map(c => ({ ...c })));
         chartRef.current?.timeScale().fitContent();
     }, [activeTicker]);
 

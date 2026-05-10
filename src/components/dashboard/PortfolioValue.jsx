@@ -20,8 +20,8 @@ function PortfolioValue({ value }) {
         </span>
     </div>
 
-    <div className="h-40 sm:h-48 md:h-64 w-full min-h-[160px]">
-        <ResponsiveContainer width="100%" height="100%" debounce={300}>
+    <div className="h-40 sm:h-48 md:h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={mainChartData}>
             <defs>
             <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">

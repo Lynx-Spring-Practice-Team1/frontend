@@ -1,7 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
-const WS_URL = 'ws://localhost:8080/ws?api_key=test-api-key&api_secret=test-api-secret';
-export const TICKERS = ['AAPL', 'JPM'];
+const key = import.meta.env.VITE_WS_KEY;
+const secret = import.meta.env.VITE_WS_SECRET;
+
+const WS_URL = `ws://localhost:8084/ws?api_key=${key}&api_secret=${secret}`;
+
+export const TICKERS = [ "AAPL", "ARKA", "JPM", "MNVS"];
 const CANDLE_INTERVAL_SEC = 300; // 5-min candles
 
 function bucketTime(marketTime) {
@@ -45,10 +49,10 @@ export function MarketDataProvider({ children }) {
   const currentCandleRef = useRef(null);
   const loadedRef        = useRef(false);
 
-  if (candleHistoryRef.current === null) {
-    candleHistoryRef.current = { AAPL: [], JPM: [] };
-    currentCandleRef.current = { AAPL: null, JPM: null };
-  }
+if (candleHistoryRef.current === null) {
+  candleHistoryRef.current = Object.fromEntries(TICKERS.map(t => [t, []]));
+  currentCandleRef.current = Object.fromEntries(TICKERS.map(t => [t, null]));
+}
 
   const lastDbSaveRef = useRef(0);
   const [latestUpdate, setLatestUpdate] = useState(null);
