@@ -2,7 +2,7 @@ import { ACCENT } from './authConstants'
 
 export default function AuthTabs({ mode, onSwitch }) {
   return (
-    <div className="grid grid-cols-2 border-b border-[#d8d8d8] dark:border-[#2a2a2a]">
+    <div className="grid grid-cols-2 border-b border-gray-300 dark:border-gray-700">
       {[['login', 'LOG IN'], ['signup', 'SIGN UP']].map(([m, label]) => (
         <button
           key={m}

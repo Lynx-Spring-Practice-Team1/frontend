@@ -25,7 +25,7 @@ export default function OrderPanel({
         : '—';
 
     const inputClass = `w-full rounded-lg border px-3 py-2 text-sm outline-none ${
-        isDark ? 'bg-[#111] border-[#444] text-white' : 'bg-[#f0f0f0] border-[#d0d0d0] text-gray-900'
+        isDark ? 'bg-[#1a1a1a] border-gray-700 text-white' : 'bg-[#f0f0f0] border-gray-400 text-gray-900'
     }`;
 
     const handlePlace = () => {
@@ -53,7 +53,7 @@ export default function OrderPanel({
     };
 
     return (
-        <div className={`rounded-xl border p-4 flex flex-col gap-3 ${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-[#e8e8e8] border-[#d8d8d8]'}`}>
+        <div className={`rounded-xl border p-4 flex flex-col gap-3 ${isDark ? 'bg-[#252525] border-gray-700' : 'bg-[#f0f0f0] border-gray-400'}`}>
 
             {/* Symbol input — only shown on Orders page */}
             {showSymbolInput && (
@@ -71,7 +71,7 @@ export default function OrderPanel({
             )}
 
             {/* BUY / SELL toggle */}
-            <div className={`flex rounded-lg overflow-hidden border ${isDark ? 'border-[#444]' : 'border-[#d0d0d0]'}`}>
+            <div className={`flex rounded-lg overflow-hidden border ${isDark ? 'border-gray-700' : 'border-gray-400'}`}>
                 {['BUY', 'SELL'].map(s => (
                     <button
                         key={s}

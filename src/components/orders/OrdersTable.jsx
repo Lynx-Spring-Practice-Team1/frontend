@@ -23,11 +23,11 @@ export default function OrdersTable({ isDark, orders, cancelOrder }) {
 
     const thCls = `px-4 py-3 text-left text-xs font-semibold tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`;
     const tdCls = `px-4 py-3 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`;
-    const rowCls = `border-b border-dashed transition-colors ${isDark ? 'border-[#2a2a2a] hover:bg-[#222]' : 'border-[#d0d0d0] hover:bg-[#e0e0e0]'}`;
+    const rowCls = `border-b border-dashed transition-colors ${isDark ? 'border-gray-700 hover:bg-[#2a2a2a]' : 'border-gray-300 hover:bg-[#f5f5f5]'}`;
 
     return (
-        <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-[#e8e8e8] border-[#d8d8d8]'}`}>
-            <div className={`flex flex-wrap gap-2 p-3 border-b ${isDark ? 'border-[#333]' : 'border-[#d0d0d0]'}`}>
+        <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-[#252525] border-gray-700' : 'bg-[#f0f0f0] border-gray-400'}`}>
+            <div className={`flex flex-wrap gap-2 p-3 border-b ${isDark ? 'border-gray-700' : 'border-gray-300'}`}>
                 {TABS.map(tab => {
                     const active = activeTab === tab;
                     const count  = tabCount(orders, tab);
@@ -39,8 +39,8 @@ export default function OrdersTable({ isDark, orders, cancelOrder }) {
                                 active
                                     ? 'text-white border-transparent'
                                     : isDark
-                                        ? 'border-[#444] text-gray-400 hover:text-gray-200 hover:border-[#666]'
-                                        : 'border-[#d0d0d0] text-gray-500 hover:text-gray-700 hover:border-[#bbb]'
+                                        ? 'border-gray-700 text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                                        : 'border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400'
                             }`}
                             style={active ? { backgroundColor: ACCENT, borderColor: ACCENT } : {}}
                         >
@@ -53,7 +53,7 @@ export default function OrdersTable({ isDark, orders, cancelOrder }) {
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className={`border-b ${isDark ? 'border-[#333]' : 'border-[#d0d0d0]'}`}>
+                        <tr className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-300'}`}>
                             {COLUMNS.map(col => <th key={col} className={thCls}>{col}</th>)}
                         </tr>
                     </thead>
@@ -85,7 +85,7 @@ export default function OrdersTable({ isDark, orders, cancelOrder }) {
                                         <button
                                             onClick={() => cancelOrder(order.id)}
                                             className={`text-xs px-2.5 py-1 rounded border cursor-pointer transition-opacity hover:opacity-70 ${
-                                                isDark ? 'border-[#444] text-gray-400' : 'border-[#c0c0c0] text-gray-500'
+                                                isDark ? 'border-gray-700 text-gray-400' : 'border-gray-300 text-gray-500'
                                             }`}
                                         >
                                             Cancel

@@ -78,7 +78,7 @@ export default function Trade({ isDark }) {
                 </div>
 
                 {/* Chart container */}
-                <div className={`rounded-xl border p-3 sm:p-4 ${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-[#e8e8e8] border-[#d8d8d8]'}`}>
+                <div className={`rounded-xl border p-3 sm:p-4 ${isDark ? 'bg-[#252525] border-gray-700' : 'bg-[#f0f0f0] border-gray-400'}`}>
                     <TradingChart
                         isDark={isDark}
                         activeTicker={activeTicker}

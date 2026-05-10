@@ -2,7 +2,7 @@ import { Menu, Search, Sun, Moon, UserCircle } from 'lucide-react';
 
 export default function Header({ isDark, onToggleDark, onOpenMobileMenu }) {
   return (
-    <header className="flex items-center justify-between w-full px-4 sm:px-6 py-2 bg-[#f0f0f0] dark:bg-[#1a1a1a] border-b border-gray-300 dark:border-gray-700 font-mono transition-colors duration-200">
+    <header className="flex items-center justify-between w-full px-4 sm:px-6 py-2 bg-[#f0f0f0] dark:bg-[#252525] border-b border-gray-300 dark:border-gray-700 font-mono transition-colors duration-200">
 
       {/* Left: hamburger (mobile) / brand (desktop) + search */}
       <div className="flex items-center gap-3 sm:gap-6 flex-1 min-w-0">

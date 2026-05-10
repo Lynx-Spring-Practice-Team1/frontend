@@ -9,7 +9,7 @@ export default function TodayActivity({ isDark, totalOrders, filledCount, cancel
     ];
 
     return (
-        <div className={`rounded-xl border p-4 flex flex-col gap-3 ${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-[#e8e8e8] border-[#d8d8d8]'}`}>
+        <div className={`rounded-xl border p-4 flex flex-col gap-3 ${isDark ? 'bg-[#252525] border-gray-700' : 'bg-[#f0f0f0] border-gray-400'}`}>
             <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                 Today&apos;s Activity
             </span>

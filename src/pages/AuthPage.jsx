@@ -116,7 +116,7 @@ export default function AuthPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.06 }}
-          className="rounded-2xl border overflow-hidden shadow-2xl bg-white border-[#d8d8d8] dark:bg-[#1a1a1a] dark:border-[#2a2a2a]"
+          className="rounded-2xl border overflow-hidden shadow-2xl bg-white border-gray-300 dark:bg-[#252525] dark:border-gray-700"
         >
           <AuthTabs mode={mode} onSwitch={switchTo} />
 

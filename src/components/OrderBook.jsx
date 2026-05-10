@@ -14,7 +14,7 @@ const MOCK_BIDS = [
 
 export default function OrderBook({ isDark = false }) {
     return (
-        <div className={`rounded-xl border p-4 ${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-[#e8e8e8] border-[#d8d8d8]'}`}>
+        <div className={`rounded-xl border p-4 ${isDark ? 'bg-[#252525] border-gray-700' : 'bg-[#f0f0f0] border-gray-400'}`}>
             <h3 className={`text-sm font-bold italic mb-3 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                 Order book
             </h3>
@@ -29,7 +29,7 @@ export default function OrderBook({ isDark = false }) {
                         </span>
                     </div>
                 ))}
-                <div className={`border-t my-1 ${isDark ? 'border-[#444]' : 'border-gray-200'}`} />
+                <div className={`border-t my-1 ${isDark ? 'border-gray-700' : 'border-gray-200'}`} />
                 {MOCK_BIDS.map(row => (
                     <div key={row.price} className="flex justify-between text-xs">
                         <span style={{ color: ACCENT }}>{row.price.toFixed(3)}</span>

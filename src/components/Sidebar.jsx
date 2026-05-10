@@ -59,7 +59,7 @@ function NavItems({ expanded, onNavigate }) {
 
 function CashBox({ compact }) {
   return (
-    <div className={`p-4 border border-black dark:border-gray-700 rounded-xl bg-[#e0e0e0] dark:bg-[#222222] transition-all ${compact ? 'px-2 py-4' : ''}`}>
+    <div className={`p-4 border border-black dark:border-gray-700 rounded-xl bg-[#f0f0f0] dark:bg-[#252525] transition-all ${compact ? 'px-2 py-4' : ''}`}>
       <p className="text-[10px] text-gray-400 dark:text-gray-500 italic font-bold">Cash</p>
       <p className={`font-bold text-gray-800 dark:text-gray-100 ${compact ? 'text-[10px]' : 'text-lg'}`}>
         {compact ? '12.4k' : '$12,480.55'}
@@ -83,7 +83,7 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
         <motion.aside
           initial={false}
           animate={{ width: isOpen ? 240 : 80 }}
-          className="bg-[#ebebeb] dark:bg-[#161616] border-r border-black dark:border-gray-700 flex flex-col p-4 transition-colors duration-200 overflow-hidden"
+          className="bg-[#f0f0f0] dark:bg-[#252525] border-r border-gray-400 dark:border-gray-700 flex flex-col p-4 transition-colors duration-200 overflow-hidden"
         >
           <div
             className="flex items-center gap-3 mb-8 cursor-pointer hover:opacity-80 transition-opacity"
@@ -92,7 +92,7 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
             <img
               src="../src/assets/t1b.png"
               alt="Logo"
-              className="h-8 w-8 rounded-full bg-[#d9774a] border border-black dark:border-gray-600 shrink-0"
+              className="h-8 w-8 rounded-full bg-[#d9774a] border border-gray-400 dark:border-gray-700 shrink-0"
             />
             <AnimatePresence>
               {isOpen && (
@@ -138,7 +138,7 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: 'tween', duration: 0.22 }}
-              className="fixed left-0 top-0 h-full w-64 z-50 bg-[#ebebeb] dark:bg-[#161616] border-r border-black dark:border-gray-700 flex flex-col p-4 lg:hidden"
+              className="fixed left-0 top-0 h-full w-64 z-50 bg-[#f0f0f0] dark:bg-[#252525] border-r border-gray-400 dark:border-gray-700 flex flex-col p-4 lg:hidden"
             >
               {/* Drawer header: logo + close */}
               <div className="flex items-center justify-between mb-8">
@@ -146,7 +146,7 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
                   <img
                     src="../src/assets/t1b.png"
                     alt="Logo"
-                    className="h-8 w-8 rounded-full bg-[#d9774a] border border-black dark:border-gray-600 shrink-0"
+                    className="h-8 w-8 rounded-full bg-[#d9774a] border border-gray-400 dark:border-gray-700 shrink-0"
                   />
                   <span className="font-black italic text-xl tracking-tighter text-gray-900 dark:text-gray-100">
                     Broker
