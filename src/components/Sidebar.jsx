@@ -89,11 +89,11 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
             className="flex items-center gap-3 mb-8 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => setIsOpen(!isOpen)}
           >
-            <img
-              src="../src/assets/t1b.png"
-              alt="Logo"
-              className="h-8 w-8 rounded-full bg-[#d9774a] border border-gray-400 dark:border-gray-700 shrink-0"
-            />
+          <img 
+            alt="Logo" 
+            className="h-8 w-8 rounded-full bg-[#d9774a] border border-gray-400 dark:border-gray-700 shrink-0 object-cover" 
+            src="../src/assets/t1b.webp"
+          ></img>
             <AnimatePresence>
               {isOpen && (
                 <motion.span

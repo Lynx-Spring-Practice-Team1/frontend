@@ -8,10 +8,11 @@ export default function SignupForm({ form, onChange, showPw, onTogglePw, showCon
       <AuthInput
         icon={User}
         type="text"
-        placeholder="Full name"
-        value={form.name}
-        onChange={onChange('name')}
+        placeholder="Username"
+        value={form.username}
+        onChange={onChange('username')}
         required
+        error={errors?.username}
       />
 
       <AuthInput

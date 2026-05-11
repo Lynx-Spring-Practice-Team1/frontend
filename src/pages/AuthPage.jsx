@@ -14,7 +14,7 @@ export default function AuthPage() {
   const [dir, setDir] = useState(0)
   const [showPw, setShowPw] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirm: '' })
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
 
@@ -45,18 +45,16 @@ export default function AuthPage() {
     return regex.test(email)
   }
 
- const handleSubmit = async (e) => { 
+ const handleSubmit = async (e) => {
   e.preventDefault();
   const newErrors = {};
 
-  // --- Validation Logic ---
-  if (!form.email || !isValidEmail(form.email)) {
-    newErrors.email = 'Please enter a valid email address';
-  }
-
   if (mode === 'signup') {
-    if (!form.name || form.name.trim() === '') {
-      newErrors.name = 'Full name is required';
+    if (!form.username || form.username.trim() === '') {
+      newErrors.username = 'Username is required';
+    }
+    if (!form.email || !isValidEmail(form.email)) {
+      newErrors.email = 'Please enter a valid email address';
     }
     if (!form.password || form.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
@@ -65,7 +63,9 @@ export default function AuthPage() {
       newErrors.confirm = 'Passwords do not match';
     }
   } else {
-    // For login, just check if password exists
+    if (!form.username || form.username.trim() === '') {
+      newErrors.username = 'Username is required';
+    }
     if (!form.password) {
       newErrors.password = 'Password is required';
     }
@@ -76,20 +76,18 @@ export default function AuthPage() {
     return;
   }
 
-  // Send to API Getaway
   setErrors({});
   setIsLoading(true);
 
   const isSignup = mode === 'signup';
   const endpoint = isSignup ? '/auth/signup' : '/auth/signin';
-  const url = `http://localhost:8000${endpoint}`;
 
-  const payload = isSignup 
-    ? { name: form.name, email: form.email, password: form.password }
-    : { email: form.email, password: form.password };
+  const payload = isSignup
+    ? { username: form.username, email: form.email, password: form.password }
+    : { username: form.username, password: form.password };
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -97,8 +95,17 @@ export default function AuthPage() {
 
     const data = await response.json();
 
-    console.log('API Response:', data);
-    
+    if (response.ok) {
+      localStorage.setItem('token', data.access_token);
+      navigate('/dashboard');
+    } else {
+      const msg = typeof data.detail === 'string'
+        ? data.detail
+        : Array.isArray(data.detail)
+          ? data.detail.map(e => e.msg).join(', ')
+          : 'Authentication failed';
+      setErrors({ server: msg });
+    }
   } catch (err) {
     setErrors({ server: 'Connection error. Is the server running?' });
   } finally {
@@ -132,6 +139,9 @@ export default function AuthPage() {
                 transition={{ duration: 0.21, ease: [0.4, 0, 0.2, 1] }}
                 className="p-6"
               >
+                {errors.server && (
+                  <p className="mb-3 text-xs font-mono text-red-500 text-center">{errors.server}</p>
+                )}
                 {mode === 'login' ? (
                   <LoginForm
                     form={form}

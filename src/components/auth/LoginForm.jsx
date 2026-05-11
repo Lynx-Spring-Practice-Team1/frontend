@@ -1,4 +1,4 @@
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { User, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { ACCENT } from './authConstants'
 import AuthInput from './AuthInput'
 
@@ -6,13 +6,13 @@ export default function LoginForm({ form, onChange, showPw, onTogglePw, onSubmit
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <AuthInput
-        icon={Mail}
-        type="email"
-        placeholder="Email address"
-        value={form.email}
-        onChange={onChange('email')}
+        icon={User}
+        type="text"
+        placeholder="Username"
+        value={form.username}
+        onChange={onChange('username')}
         required
-        error={errors?.email}
+        error={errors?.username}
       />
 
       <AuthInput

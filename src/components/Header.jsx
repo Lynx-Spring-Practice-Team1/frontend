@@ -1,6 +1,27 @@
-import { Menu, Search, Sun, Moon, UserCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Menu, Search, Sun, Moon, UserCircle, LogOut, AreaChart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Header({ isDark, onToggleDark, onOpenMobileMenu }) {
+  const [profileOpen, setProfileOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  function handleSignOut() {
+    localStorage.removeItem('token');
+    navigate('/login');
+  }
+
   return (
     <header className="flex items-center justify-between w-full px-4 sm:px-6 py-2 bg-[#f0f0f0] dark:bg-[#252525] border-b border-gray-300 dark:border-gray-700 font-mono transition-colors duration-200">
 
@@ -34,7 +55,7 @@ export default function Header({ isDark, onToggleDark, onOpenMobileMenu }) {
         </div>
       </div>
 
-      {/* Right: status indicator, dark toggle, profile */}
+      {/* Right: dark toggle, profile */}
       <div className="flex items-center gap-2 sm:gap-4 ml-3">
         <button
           onClick={onToggleDark}
@@ -44,13 +65,36 @@ export default function Header({ isDark, onToggleDark, onOpenMobileMenu }) {
           {isDark ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
+        <div className="relative" ref={dropdownRef}>
+          <button
+            aria-label="User profile"
+            onClick={() => setProfileOpen(o => !o)}
+            className="relative h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            <UserCircle size={20} />
+            <div className="h-2 w-2 rounded-full bg-[#34a853] shadow-[0_0_8px_rgba(52,168,83,0.5)] absolute bottom-0 right-0" />
+          </button>
 
-        <button
-          className="relative h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-        >
-          <UserCircle size={20} />
-          <div className="h-2 w-2 rounded-full bg-[#34a853] shadow-[0_0_8px_rgba(52,168,83,0.5)] absolute bottom-0 right-0" />
-        </button>
+          {profileOpen && (
+            <div className="absolute right-0 mt-2 w-30 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1e1e] shadow-lg overflow-hidden z-50">
+       
+               <button
+                className="w-full flex justify-between items-center gap-2 px-4 py-2.5 text-xs font-mono text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <UserCircle size={13} />
+                <a href="/account">Account</a>
+              </button>
+
+              <button
+                onClick={handleSignOut}
+                className="w-full flex justify-between items-center gap-2 px-4 py-2.5 text-xs font-mono text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <LogOut size={11} />
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
     </header>
