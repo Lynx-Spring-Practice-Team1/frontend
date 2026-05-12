@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useMarketData } from '../context/MarketDataContext';
 import {
   Home,
   ArrowLeftRight,
@@ -57,12 +58,15 @@ function NavItems({ expanded, onNavigate }) {
   );
 }
 
-function CashBox({ compact }) {
+const fmt = v =>
+  `$${parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+function CashBox({ cash }) {
   return (
-    <div className={`p-4 border border-black dark:border-gray-700 rounded-xl bg-[#f0f0f0] dark:bg-[#252525] transition-all ${compact ? 'px-2 py-4' : ''}`}>
-      <p className="text-[10px] text-gray-400 dark:text-gray-500 italic font-bold">Cash</p>
-      <p className={`font-bold text-gray-800 dark:text-gray-100 ${compact ? 'text-[10px]' : 'text-lg'}`}>
-        {compact ? '12.4k' : '$12,480.55'}
+    <div className="p-4 border border-black dark:border-gray-700 rounded-xl bg-[#f0f0f0] dark:bg-[#252525]">
+      <p className="text-[10px] text-gray-400 dark:text-gray-500 italic font-bold uppercase tracking-wider">Available Cash</p>
+      <p className="font-bold text-gray-800 dark:text-gray-100 text-lg break-all">
+        {cash != null ? fmt(cash) : '—'}
       </p>
     </div>
   );
@@ -70,6 +74,32 @@ function CashBox({ compact }) {
 
 function Sidebar({ mobileOpen = false, onCloseMobile }) {
   const [isOpen, setIsOpen] = useState(true);
+  const [cash, setCash] = useState(null);
+  const { lastOrderUpdate } = useMarketData();
+
+  const loadCash = useCallback(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    fetch('/api/portfolio', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => data?.cash?.available != null && setCash(data.cash.available))
+      .catch(() => {});
+  }, []);
+
+  // Initial load
+  useEffect(() => { loadCash(); }, [loadCash]);
+
+  // Reload immediately when an order fills or cancels (wallet changes)
+  useEffect(() => {
+    if (!lastOrderUpdate) return;
+    if (['FILLED', 'CANCELLED', 'REJECTED'].includes(lastOrderUpdate.status)) loadCash();
+  }, [lastOrderUpdate, loadCash]);
+
+  // Reload when a deposit or withdraw completes
+  useEffect(() => {
+    window.addEventListener('wallet-updated', loadCash);
+    return () => window.removeEventListener('wallet-updated', loadCash);
+  }, [loadCash]);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
@@ -110,9 +140,11 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
 
           <NavItems expanded={isOpen} onNavigate={undefined} />
 
-          <div className="mt-auto">
-            <CashBox compact={!isOpen} />
-          </div>
+          {isOpen && (
+            <div className="mt-auto">
+              <CashBox cash={cash} />
+            </div>
+          )}
         </motion.aside>
       </div>
 
@@ -164,7 +196,7 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
               <NavItems expanded={true} onNavigate={onCloseMobile} />
 
               <div className="mt-auto">
-                <CashBox compact={false} />
+                <CashBox cash={cash} />
               </div>
             </motion.div>
           </>

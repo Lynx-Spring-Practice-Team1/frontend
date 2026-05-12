@@ -2,20 +2,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+const apiTarget = process.env.API_TARGET ?? 'http://localhost:8000'
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    host: '0.0.0.0',
     proxy: {
-      '/api/portfolio': {
-        target: 'http://localhost:8090',
-        changeOrigin: true,
-      },
       '/api': {
-        target: process.env.API_TARGET ?? 'http://localhost:3001',
+        target: apiTarget,
         changeOrigin: true,
       },
       '/auth': {
-        target: 'http://localhost:8090',
+        target: apiTarget,
         changeOrigin: true,
       },
     },

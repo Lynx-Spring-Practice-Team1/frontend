@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import TradingChart from '../components/TradingChart';
 import OrderPanel from '../components/OrderPanel';
-import OrderBook from '../components/OrderBook';
+import TodayActivity from '../components/orders/TodayActivity.jsx';
 import { useMarketData, TICKERS } from '../context/MarketDataContext';
+import useOrders from '../components/orders/useOrders.js';
 
 const TICKER_INFO = {
-    AAPL: { name: 'Apple Inc.',     exchange: 'NASDAQ' },
-    JPM:  { name: 'JPMorgan Chase', exchange: 'NYSE'   },
+    AAPL: { name: 'Apple Inc.', exchange: 'NASDAQ' },
+    JPM: { name: 'JPMorgan Chase', exchange: 'NYSE' },
 };
 
 function useChartHeight() {
@@ -21,7 +22,8 @@ function useChartHeight() {
 
 export default function Trade({ isDark }) {
     const [activeTicker, setActiveTicker] = useState('AAPL');
-    const { latestUpdate, getCandleData, historyLoaded } = useMarketData();
+    const { latestUpdate, getCandleData, historyLoaded, tickers } = useMarketData();
+    const { placeOrder, orders } = useOrders();
     const chartHeight = useChartHeight();
 
     const [candles, setCandles] = useState({});
@@ -44,18 +46,32 @@ export default function Trade({ isDark }) {
     }, [latestUpdate]);
 
     const activeCandle = candles[activeTicker];
-    const price     = activeCandle?.close ?? 0;
-    const change    = activeCandle ? activeCandle.close - activeCandle.open : 0;
+    const price = activeCandle?.close ?? 0;
+    const change = activeCandle ? activeCandle.close - activeCandle.open : 0;
     const changePct = activeCandle?.open > 0 ? (change / activeCandle.open * 100) : 0;
-    const isPos     = change >= 0;
+    const isPos = change >= 0;
 
     const { name, exchange } = TICKER_INFO[activeTicker] ?? { name: activeTicker, exchange: '' };
+
+    const filledCount = orders.filter(o => o.status === 'FILLED').length;
+    const cancelledCount = orders.filter(o => o.status === 'CANCELLED').length;
+    const fillDenom = filledCount + cancelledCount;
+    const fillRate = fillDenom > 0 ? Math.round(filledCount / fillDenom * 100) : 0;
+
+    const [positions, setPositions] = useState([]);
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        fetch('/api/portfolio', { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data?.positions && setPositions(data.positions))
+            .catch(() => { });
+    }, []);
 
     return (
         <div className="flex flex-col lg:flex-row gap-5">
             {/* Left: chart area */}
             <div className="flex-1 flex flex-col gap-3 min-w-0">
-                {/* Stock header — stacks on mobile, inline on sm+ */}
+                {/* Stock header */}
                 <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
                     <div className="flex items-baseline gap-2.5">
                         <span className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
@@ -88,10 +104,6 @@ export default function Trade({ isDark }) {
                 </div>
             </div>
 
-            {/* Right: order panel + order book
-                  mobile  → stacked vertically (flex-col)
-                  sm–md   → side by side (flex-row)
-                  lg+     → back to vertical, pinned as right column */}
             <div className="lg:w-72 lg:shrink-0">
                 <div className="flex flex-col sm:flex-row lg:flex-col gap-4">
                     <div className="flex-1 lg:flex-none min-w-0">
@@ -99,10 +111,21 @@ export default function Trade({ isDark }) {
                             isDark={isDark}
                             activeTicker={activeTicker}
                             currentPrice={price}
+                            onSubmit={placeOrder}
+                            showSymbolInput={true}
+                            symbolOptions={tickers}
+                            onTickerChange={setActiveTicker}
+                            positions={positions}
                         />
                     </div>
                     <div className="flex-1 lg:flex-none min-w-0">
-                        <OrderBook isDark={isDark} />
+                        <TodayActivity
+                            isDark={isDark}
+                            totalOrders={orders.length}
+                            filledCount={filledCount}
+                            cancelledCount={cancelledCount}
+                            fillRate={fillRate}
+                        />
                     </div>
                 </div>
             </div>

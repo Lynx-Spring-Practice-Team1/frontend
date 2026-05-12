@@ -2,10 +2,18 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 const key = import.meta.env.VITE_WS_KEY;
 const secret = import.meta.env.VITE_WS_SECRET;
+const EXCHANGE_WS_URL = import.meta.env.VITE_EXCHANGE_WS_URL || 'ws://localhost:8084/ws';
 
-const WS_URL = `ws://localhost:8084/ws?api_key=${key}&api_secret=${secret}`;
+function buildWsUrl() {
+  const url = new URL(EXCHANGE_WS_URL);
+  if (key) url.searchParams.set('api_key', key);
+  if (secret) url.searchParams.set('api_secret', secret);
+  return url.toString();
+}
 
-export const TICKERS = [ "AAPL", "ARKA", "JPM", "MNVS"];
+const WS_URL = buildWsUrl();
+
+export const TICKERS = ['AAPL', 'ARKA', 'JPM', 'MNVS'];
 const CANDLE_INTERVAL_SEC = 300; // 5-min candles
 
 function bucketTime(marketTime) {
@@ -19,10 +27,10 @@ async function fetchCandles(ticker) {
     if (!res.ok) return [];
     const rows = await res.json();
     return rows.map(r => ({
-      time:  Number(r.time),
-      open:  Number(r.open),
-      high:  Number(r.high),
-      low:   Number(r.low),
+      time: Number(r.time),
+      open: Number(r.open),
+      high: Number(r.high),
+      low: Number(r.low),
       close: Number(r.close),
     }));
   } catch {
@@ -38,7 +46,7 @@ async function upsertCandle(ticker, candle) {
       body: JSON.stringify({ ticker, ...candle }),
     });
   } catch {
-    // Backend unavailable — silently ignore
+    // Backend unavailable - silently ignore chart persistence.
   }
 }
 
@@ -47,18 +55,18 @@ const MarketDataContext = createContext(null);
 export function MarketDataProvider({ children }) {
   const candleHistoryRef = useRef(null);
   const currentCandleRef = useRef(null);
-  const loadedRef        = useRef(false);
+  const loadedRef = useRef(false);
 
-if (candleHistoryRef.current === null) {
-  candleHistoryRef.current = Object.fromEntries(TICKERS.map(t => [t, []]));
-  currentCandleRef.current = Object.fromEntries(TICKERS.map(t => [t, null]));
-}
+  if (candleHistoryRef.current === null) {
+    candleHistoryRef.current = Object.fromEntries(TICKERS.map(t => [t, []]));
+    currentCandleRef.current = Object.fromEntries(TICKERS.map(t => [t, null]));
+  }
 
   const lastDbSaveRef = useRef(0);
   const [latestUpdate, setLatestUpdate] = useState(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [lastOrderUpdate, setLastOrderUpdate] = useState(null);
 
-  // Load candle history from DB on mount
   useEffect(() => {
     if (loadedRef.current) return;
     loadedRef.current = true;
@@ -67,7 +75,6 @@ if (candleHistoryRef.current === null) {
       TICKERS.map(async ticker => {
         const candles = await fetchCandles(ticker);
         if (candles.length === 0) return;
-        // Last stored candle may be an in-progress one — restore it as current
         candleHistoryRef.current[ticker] = candles.slice(0, -1);
         currentCandleRef.current[ticker] = candles[candles.length - 1];
       }),
@@ -87,11 +94,20 @@ if (candleHistoryRef.current === null) {
           type: 'SUBSCRIBE',
           payload: { channel: 'PRICE_FEED', tickers: TICKERS },
         }));
+        ws.send(JSON.stringify({
+          type: 'SUBSCRIBE',
+          payload: { channel: 'ORDER_UPDATES' },
+        }));
       };
 
       ws.onmessage = (event) => {
         let msg;
         try { msg = JSON.parse(event.data); } catch { return; }
+
+        if (msg.type === 'ORDER_UPDATE') {
+          setLastOrderUpdate(msg.payload ?? null);
+          return;
+        }
 
         if (msg.type !== 'PRICE_UPDATE') return;
 
@@ -100,11 +116,10 @@ if (candleHistoryRef.current === null) {
         if (!TICKERS.includes(ticker)) return;
 
         const bucketSec = bucketTime(market_time);
-        const current   = currentCandleRef.current[ticker];
+        const current = currentCandleRef.current[ticker];
 
         if (!current || current.time !== bucketSec) {
           if (current) {
-            // Candle finalized — persist immediately
             upsertCandle(ticker, current);
             candleHistoryRef.current[ticker] = [
               ...candleHistoryRef.current[ticker],
@@ -112,24 +127,23 @@ if (candleHistoryRef.current === null) {
             ];
           }
           currentCandleRef.current[ticker] = {
-            time:  bucketSec,
-            open:  price,
-            high:  price,
-            low:   price,
+            time: bucketSec,
+            open: price,
+            high: price,
+            low: price,
             close: price,
           };
         } else {
           currentCandleRef.current[ticker] = {
             ...current,
-            high:  Math.max(current.high, price),
-            low:   Math.min(current.low,  price),
+            high: Math.max(current.high, price),
+            low: Math.min(current.low, price),
             close: price,
           };
         }
 
         setLatestUpdate({ ticker, candle: currentCandleRef.current[ticker] });
 
-        // Persist in-progress candles every 30 s so we survive a page refresh
         const now = Date.now();
         if (now - lastDbSaveRef.current > 30_000) {
           for (const t of TICKERS) {
@@ -168,7 +182,7 @@ if (candleHistoryRef.current === null) {
   }
 
   return (
-    <MarketDataContext.Provider value={{ latestUpdate, getCandleData, historyLoaded }}>
+    <MarketDataContext.Provider value={{ latestUpdate, getCandleData, historyLoaded, tickers: TICKERS, lastOrderUpdate }}>
       {children}
     </MarketDataContext.Provider>
   );

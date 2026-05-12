@@ -2,16 +2,16 @@ import { ACCENT } from './constants.js';
 
 export default function TodayActivity({ isDark, totalOrders, filledCount, cancelledCount, fillRate }) {
     const rows = [
-        { label: 'Orders Placed',    value: totalOrders },
-        { label: 'Orders Filled',    value: filledCount },
+        { label: 'Orders Placed', value: totalOrders },
+        { label: 'Orders Filled', value: filledCount },
         { label: 'Orders Cancelled', value: cancelledCount },
-        { label: 'Fill Rate',        value: `${fillRate}%` },
+        { label: 'Fill Rate', value: `${fillRate}%` },
     ];
 
     return (
         <div className={`rounded-xl border p-4 flex flex-col gap-3 ${isDark ? 'bg-[#252525] border-gray-700' : 'bg-[#f0f0f0] border-gray-400'}`}>
             <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                Today&apos;s Activity
+                Activity
             </span>
             <div className="flex flex-col gap-2">
                 {rows.map(({ label, value }) => (

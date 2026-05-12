@@ -4,12 +4,12 @@ import StatusBadge from './StatusBadge.jsx';
 
 function filterOrders(orders, tab) {
     const isActive = o => ACTIVE_STATUSES.includes(o.status);
-    if (tab === 'All')       return orders;
-    if (tab === 'Active')    return orders.filter(isActive);
-    if (tab === 'Filled')    return orders.filter(o => o.status === 'FILLED');
+    if (tab === 'All') return orders;
+    if (tab === 'Pending') return orders.filter(isActive);
+    if (tab === 'Filled') return orders.filter(o => o.status === 'FILLED');
     if (tab === 'Cancelled') return orders.filter(o => o.status === 'CANCELLED');
-    if (tab === 'Rejected')  return orders.filter(o => o.status === 'REJECTED');
-    if (tab === 'Expired')   return orders.filter(o => o.status === 'EXPIRED');
+    if (tab === 'Rejected') return orders.filter(o => o.status === 'REJECTED');
+    if (tab === 'Expired') return orders.filter(o => o.status === 'EXPIRED');
     return orders;
 }
 
@@ -17,8 +17,16 @@ function tabCount(orders, tab) {
     return filterOrders(orders, tab).length;
 }
 
+function priceLabel(order) {
+    if (order.status === 'FILLED' && order.filled_price != null && Number(order.filled_price) > 0)
+        return `$${Number(order.filled_price).toFixed(2)}`;
+    return order.price == null || Number(order.price) <= 0
+        ? 'MARKET'
+        : `$${Number(order.price).toFixed(2)}`;
+}
+
 export default function OrdersTable({ isDark, orders, cancelOrder }) {
-    const [activeTab, setActiveTab] = useState('Active');
+    const [activeTab, setActiveTab] = useState('Pending');
     const filtered = filterOrders(orders, activeTab);
 
     const thCls = `px-4 py-3 text-left text-xs font-semibold tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`;
@@ -30,7 +38,7 @@ export default function OrdersTable({ isDark, orders, cancelOrder }) {
             <div className={`flex flex-wrap gap-2 p-3 border-b ${isDark ? 'border-gray-700' : 'border-gray-300'}`}>
                 {TABS.map(tab => {
                     const active = activeTab === tab;
-                    const count  = tabCount(orders, tab);
+                    const count = tabCount(orders, tab);
                     return (
                         <button
                             key={tab}
@@ -78,7 +86,7 @@ export default function OrdersTable({ isDark, orders, cancelOrder }) {
                                 </td>
                                 <td className={tdCls}>{order.type}</td>
                                 <td className={`px-4 py-3 font-mono text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{order.qty}</td>
-                                <td className={`px-4 py-3 font-mono text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>${order.price.toFixed(2)}</td>
+                                <td className={`px-4 py-3 font-mono text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{priceLabel(order)}</td>
                                 <td className="px-4 py-3"><StatusBadge status={order.status} isDark={isDark} /></td>
                                 <td className="px-4 py-3">
                                     {ACTIVE_STATUSES.includes(order.status) && (
