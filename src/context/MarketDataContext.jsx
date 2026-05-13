@@ -1,17 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
-const key = import.meta.env.VITE_WS_KEY;
-const secret = import.meta.env.VITE_WS_SECRET;
-const EXCHANGE_WS_URL = import.meta.env.VITE_EXCHANGE_WS_URL || 'ws://localhost:8084/ws';
-
 function buildWsUrl() {
-  const url = new URL(EXCHANGE_WS_URL);
-  if (key) url.searchParams.set('api_key', key);
-  if (secret) url.searchParams.set('api_secret', secret);
-  return url.toString();
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/api/ws?token=${encodeURIComponent(token)}`;
 }
-
-const WS_URL = buildWsUrl();
 
 export const TICKERS = ['AAPL', 'ARKA', 'JPM', 'MNVS'];
 const CANDLE_INTERVAL_SEC = 300; // 5-min candles
@@ -87,18 +81,11 @@ export function MarketDataProvider({ children }) {
     let active = true;
 
     function connect() {
-      ws = new WebSocket(WS_URL);
+      const url = buildWsUrl();
+      if (!url) return;
+      ws = new WebSocket(url);
 
-      ws.onopen = () => {
-        ws.send(JSON.stringify({
-          type: 'SUBSCRIBE',
-          payload: { channel: 'PRICE_FEED', tickers: TICKERS },
-        }));
-        ws.send(JSON.stringify({
-          type: 'SUBSCRIBE',
-          payload: { channel: 'ORDER_UPDATES' },
-        }));
-      };
+      ws.onopen = () => {};
 
       ws.onmessage = (event) => {
         let msg;
