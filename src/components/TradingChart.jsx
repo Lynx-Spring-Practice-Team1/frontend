@@ -1,14 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { createChart, CandlestickSeries } from 'lightweight-charts';
-import { useMarketData, TICKERS } from '../context/MarketDataContext';
+import { useMarketData } from '../context/MarketDataContext';
 
-const TradingChart = ({ isDark = false, activeTicker = 'AAPL', onTickerChange, height = 400 }) => {
+const TradingChart = ({ isDark = false, activeTicker = '', onTickerChange, height = 400 }) => {
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const seriesRef = useRef(null);
     const activeTickerRef = useRef(activeTicker);
 
-    const { latestUpdate, getCandleData, historyLoaded } = useMarketData();
+    const { latestUpdate, getCandleData, historyLoaded, tickers } = useMarketData();
 
     const colors = {
         light: { textColor: '#333333', background: '#e8e8e8' },
@@ -123,7 +123,7 @@ const TradingChart = ({ isDark = false, activeTicker = 'AAPL', onTickerChange, h
     return (
         <div style={{ position: 'relative', width: '100%' }}>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                {TICKERS.map(ticker => (
+                {tickers.map(ticker => (
                     <button
                         key={ticker}
                         style={

@@ -6,8 +6,13 @@ function buildWsUrl() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${protocol}//${window.location.host}/api/ws?token=${encodeURIComponent(token)}`;
 }
-
-export const TICKERS = ['AAPL', 'ARKA', 'JPM', 'MNVS'];
+const all_tickers = [
+  "ARKA", "PHNX", "MNVS", "STRM", "NOVA", "BYTE", "QNTM", "CRUX", "ORBT", "VRTX",
+  "AURA", "CRVS", "IRON", "MRCR", "APEX", "GILT", "VALE", "VLCN", "SOLX", "CLDN",
+  "PRMA", "HDRG", "WNDX", "ATLS", "HLIX", "MEDX", "GNTC", "CRYO", "PLSM", "NXGN",
+  "DRAX", "LUMX", "CRST", "VOYA", "AXEL", "MRKT"
+];
+export const TICKERS = ["ARKA", "PHNX", "MNVS"];
 const CANDLE_INTERVAL_SEC = 300; // 5-min candles
 
 function bucketTime(marketTime) {
@@ -85,13 +90,14 @@ export function MarketDataProvider({ children }) {
       if (!url) return;
       ws = new WebSocket(url);
 
-      ws.onopen = () => {};
+      ws.onopen = () => { };
 
       ws.onmessage = (event) => {
         let msg;
         try { msg = JSON.parse(event.data); } catch { return; }
 
         if (msg.type === 'ORDER_UPDATE') {
+          console.log('ORDER_UPDATE received:', JSON.stringify(msg, null, 2));
           setLastOrderUpdate(msg.payload ?? null);
           return;
         }

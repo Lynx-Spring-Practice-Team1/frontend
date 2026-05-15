@@ -10,12 +10,13 @@ import { useMarketData } from '../context/MarketDataContext';
 export default function Orders({ isDark = false }) {
     const { orders, loading, error, placeOrder, cancelOrder } = useOrders();
     const { tickers, latestUpdate, getCandleData, historyLoaded } = useMarketData();
-    const [selectedTicker, setSelectedTicker] = useState('AAPL');
+    const [selectedTicker, setSelectedTicker] = useState('');
     const [candles, setCandles] = useState({});
 
-    // Seed from historical candle data once loaded
+    // Seed from historical candle data once loaded; also set default ticker
     useEffect(() => {
         if (!historyLoaded) return;
+        if (!selectedTicker && tickers.length > 0) setSelectedTicker(tickers[0]);
         const init = {};
         for (const t of tickers) {
             const data = getCandleData(t);

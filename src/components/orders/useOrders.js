@@ -30,7 +30,7 @@ function normalizeOrder(order) {
     filled_price: order.filled_price == null ? null : Number(order.filled_price),
     status: order.status,
     filled_quantity: order.filled_quantity ?? 0,
-    exchange_fee: 0,
+    exchange_fee: order.exchange_fee == null ? 0 : Number(order.exchange_fee),
   };
 }
 
@@ -62,7 +62,7 @@ export default function useOrders() {
   // Directly patch the matching order in state — no API call needed
   useEffect(() => {
     if (!lastOrderUpdate) return;
-    const { order_id, status, filled_quantity, average_fill_price } = lastOrderUpdate;
+    const { order_id, status, filled_quantity, average_fill_price, exchange_fee } = lastOrderUpdate;
     if (!order_id || !status) return;
 
     setOrders(prev => {
@@ -74,6 +74,7 @@ export default function useOrders() {
         status,
         filled_quantity: Number(filled_quantity) || updated[idx].filled_quantity,
         filled_price:    Number(average_fill_price) || updated[idx].filled_price,
+        exchange_fee:    exchange_fee != null ? Number(exchange_fee) : updated[idx].exchange_fee,
       };
       return updated;
     });

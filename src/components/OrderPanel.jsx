@@ -4,7 +4,7 @@ const ACCENT = '#d9774a';
 
 export default function OrderPanel({
     isDark = false,
-    activeTicker = 'AAPL',
+    activeTicker = '',
     currentPrice = 0,
     onSubmit,
     showSymbolInput = false,
@@ -106,7 +106,7 @@ export default function OrderPanel({
                             type="text"
                             value={symbol}
                             maxLength={5}
-                            placeholder="e.g. AAPL"
+                            placeholder="Ticker symbol"
                             onChange={e => setSymbol(e.target.value.toUpperCase())}
                             className={inputClass}
                         />

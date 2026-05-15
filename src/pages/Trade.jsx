@@ -2,13 +2,8 @@ import { useState, useEffect } from 'react';
 import TradingChart from '../components/TradingChart';
 import OrderPanel from '../components/OrderPanel';
 import TodayActivity from '../components/orders/TodayActivity.jsx';
-import { useMarketData, TICKERS } from '../context/MarketDataContext';
+import { useMarketData } from '../context/MarketDataContext';
 import useOrders from '../components/orders/useOrders.js';
-
-const TICKER_INFO = {
-    AAPL: { name: 'Apple Inc.', exchange: 'NASDAQ' },
-    JPM: { name: 'JPMorgan Chase', exchange: 'NYSE' },
-};
 
 function useChartHeight() {
     const [height, setHeight] = useState(() => window.innerWidth < 640 ? 260 : 400);
@@ -21,7 +16,7 @@ function useChartHeight() {
 }
 
 export default function Trade({ isDark }) {
-    const [activeTicker, setActiveTicker] = useState('AAPL');
+    const [activeTicker, setActiveTicker] = useState('');
     const { latestUpdate, getCandleData, historyLoaded, tickers } = useMarketData();
     const { placeOrder, orders } = useOrders();
     const chartHeight = useChartHeight();
@@ -30,8 +25,9 @@ export default function Trade({ isDark }) {
 
     useEffect(() => {
         if (!historyLoaded) return;
+        if (!activeTicker && tickers.length > 0) setActiveTicker(tickers[0]);
         const init = {};
-        for (const t of TICKERS) {
+        for (const t of tickers) {
             const data = getCandleData(t);
             const last = data[data.length - 1];
             if (last) init[t] = last;
@@ -51,7 +47,8 @@ export default function Trade({ isDark }) {
     const changePct = activeCandle?.open > 0 ? (change / activeCandle.open * 100) : 0;
     const isPos = change >= 0;
 
-    const { name, exchange } = TICKER_INFO[activeTicker] ?? { name: activeTicker, exchange: '' };
+    const name = activeTicker;
+    const exchange = '';
 
     const filledCount = orders.filter(o => o.status === 'FILLED').length;
     const cancelledCount = orders.filter(o => o.status === 'CANCELLED').length;
