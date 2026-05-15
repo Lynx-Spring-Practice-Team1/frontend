@@ -6,14 +6,10 @@ function buildWsUrl() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${protocol}//${window.location.host}/api/ws?token=${encodeURIComponent(token)}`;
 }
-const all_tickers = [
-  "ARKA", "PHNX", "MNVS", "STRM", "NOVA", "BYTE", "QNTM", "CRUX", "ORBT", "VRTX",
-  "AURA", "CRVS", "IRON", "MRCR", "APEX", "GILT", "VALE", "VLCN", "SOLX", "CLDN",
-  "PRMA", "HDRG", "WNDX", "ATLS", "HLIX", "MEDX", "GNTC", "CRYO", "PLSM", "NXGN",
-  "DRAX", "LUMX", "CRST", "VOYA", "AXEL", "MRKT"
-];
+
 export const TICKERS = ["ARKA", "PHNX", "MNVS"];
 const CANDLE_INTERVAL_SEC = 300; // 5-min candles
+const MARKET_EVENTS_LIMIT = 50;
 
 function bucketTime(marketTime) {
   const sec = Math.floor(new Date(marketTime).getTime() / 1000);
@@ -49,6 +45,34 @@ async function upsertCandle(ticker, candle) {
   }
 }
 
+function authHeaders() {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function fetchMarketEvents() {
+  const res = await fetch(`/api/market/events?limit=${MARKET_EVENTS_LIMIT}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to load market events');
+  return res.json();
+}
+
+function normalizeMarketEvent(message) {
+  const event = message?.type === 'MARKET_EVENT' ? message.payload : message;
+  if (!event?.event_id) return null;
+  return event;
+}
+
+function prependMarketEvent(events, event) {
+  const normalized = normalizeMarketEvent(event);
+  if (!normalized) return events;
+  return [
+    normalized,
+    ...events.filter(item => item.event_id !== normalized.event_id),
+  ].slice(0, MARKET_EVENTS_LIMIT);
+}
+
 const MarketDataContext = createContext(null);
 
 export function MarketDataProvider({ children }) {
@@ -65,6 +89,9 @@ export function MarketDataProvider({ children }) {
   const [latestUpdate, setLatestUpdate] = useState(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [lastOrderUpdate, setLastOrderUpdate] = useState(null);
+  const [marketEvents, setMarketEvents] = useState([]);
+  const [marketEventsLoaded, setMarketEventsLoaded] = useState(false);
+  const [marketEventsError, setMarketEventsError] = useState(null);
 
   useEffect(() => {
     if (loadedRef.current) return;
@@ -78,6 +105,14 @@ export function MarketDataProvider({ children }) {
         currentCandleRef.current[ticker] = candles[candles.length - 1];
       }),
     ).then(() => setHistoryLoaded(true));
+
+    fetchMarketEvents()
+      .then(rows => {
+        setMarketEvents(rows.map(normalizeMarketEvent).filter(Boolean).slice(0, MARKET_EVENTS_LIMIT));
+        setMarketEventsError(null);
+      })
+      .catch(() => setMarketEventsError('Unable to load market events.'))
+      .finally(() => setMarketEventsLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -99,6 +134,11 @@ export function MarketDataProvider({ children }) {
         if (msg.type === 'ORDER_UPDATE') {
           console.log('ORDER_UPDATE received:', JSON.stringify(msg, null, 2));
           setLastOrderUpdate(msg.payload ?? null);
+          return;
+        }
+
+        if (msg.type === 'MARKET_EVENT') {
+          setMarketEvents(prev => prependMarketEvent(prev, msg));
           return;
         }
 
@@ -175,7 +215,16 @@ export function MarketDataProvider({ children }) {
   }
 
   return (
-    <MarketDataContext.Provider value={{ latestUpdate, getCandleData, historyLoaded, tickers: TICKERS, lastOrderUpdate }}>
+    <MarketDataContext.Provider value={{
+      latestUpdate,
+      getCandleData,
+      historyLoaded,
+      tickers: TICKERS,
+      lastOrderUpdate,
+      marketEvents,
+      marketEventsLoaded,
+      marketEventsError,
+    }}>
       {children}
     </MarketDataContext.Provider>
   );
