@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
-  Bell,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -18,13 +17,6 @@ import {
 const CARD = 'bg-[#f0f0f0] dark:bg-[#252525] border border-gray-400 dark:border-gray-700 rounded-xl transition-colors';
 const INPUT = 'w-full bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#e07a5f]';
 const BUTTON = 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
-
-const defaultPreferences = {
-  order_updates: true,
-  market_alerts: true,
-  email_notifications: false,
-  compact_account_view: false,
-};
 
 function decodeToken(token) {
   if (!token) return null;
@@ -83,24 +75,6 @@ function Field({ label, children }) {
   );
 }
 
-function Toggle({ checked, disabled, label, sub, onChange }) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between gap-4 rounded-lg border border-gray-300 bg-white px-3 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:bg-[#1a1a1a] dark:hover:bg-[#202020]"
-    >
-      <span className="min-w-0">
-        <span className="block text-sm font-bold text-gray-900 dark:text-gray-100">{label}</span>
-        <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{sub}</span>
-      </span>
-      <span className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${checked ? 'bg-[#e07a5f]' : 'bg-gray-300 dark:bg-gray-700'}`}>
-        <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
-      </span>
-    </button>
-  );
-}
 
 export default function Account() {
   const navigate = useNavigate();
@@ -111,7 +85,6 @@ export default function Account() {
   const [loading, setLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
-  const [preferencesSaving, setPreferencesSaving] = useState(false);
   const [error, setError] = useState('');
   const [profileMessage, setProfileMessage] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
@@ -155,8 +128,7 @@ export default function Account() {
     setError('');
     try {
       const data = await request('/auth/me');
-      const preferences = { ...defaultPreferences, ...(data.preferences || {}) };
-      setProfile({ ...data, preferences });
+      setProfile(data);
       setProfileForm({ username: data.username || '', email: data.email || '' });
     } catch (err) {
       if (err.message !== 'Session expired') setError(err.message);
@@ -203,8 +175,7 @@ export default function Account() {
         method: 'PATCH',
         body: JSON.stringify({ username, email }),
       });
-      const preferences = { ...defaultPreferences, ...(data.preferences || {}) };
-      setProfile({ ...data, preferences });
+      setProfile(data);
       setProfileForm({ username: data.username, email: data.email });
       setProfileMessage('Profile updated');
     } catch (err) {
@@ -247,34 +218,6 @@ export default function Account() {
       if (err.message !== 'Session expired') setError(err.message);
     } finally {
       setPasswordSaving(false);
-    }
-  };
-
-  const updatePreference = async (key, value) => {
-    if (!profile) return;
-    setError('');
-    setProfileMessage('');
-
-    const previous = profile.preferences;
-    const nextPreferences = { ...previous, [key]: value };
-    setProfile(current => ({ ...current, preferences: nextPreferences }));
-    setPreferencesSaving(true);
-
-    try {
-      const data = await request('/auth/me', {
-        method: 'PATCH',
-        body: JSON.stringify({ preferences: nextPreferences }),
-      });
-      setProfile(current => ({
-        ...current,
-        ...data,
-        preferences: { ...defaultPreferences, ...(data.preferences || {}) },
-      }));
-    } catch (err) {
-      setProfile(current => ({ ...current, preferences: previous }));
-      if (err.message !== 'Session expired') setError(err.message);
-    } finally {
-      setPreferencesSaving(false);
     }
   };
 
@@ -429,49 +372,6 @@ export default function Account() {
         </div>
 
         <div className="space-y-4">
-          <div className={`${CARD} p-5`}>
-            <div className="mb-5 flex items-center gap-3">
-              <Bell size={20} className="text-[#e07a5f]" />
-              <div>
-                <h2 className="text-lg font-black">Preferences</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {preferencesSaving ? 'Saving changes...' : 'Saved to your account.'}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Toggle
-                checked={profile?.preferences?.order_updates}
-                disabled={preferencesSaving}
-                label="Order updates"
-                sub="Status changes for active orders."
-                onChange={value => updatePreference('order_updates', value)}
-              />
-              <Toggle
-                checked={profile?.preferences?.market_alerts}
-                disabled={preferencesSaving}
-                label="Market alerts"
-                sub="Important price and market movement notices."
-                onChange={value => updatePreference('market_alerts', value)}
-              />
-              <Toggle
-                checked={profile?.preferences?.email_notifications}
-                disabled={preferencesSaving}
-                label="Email notifications"
-                sub="Send account notifications to your email."
-                onChange={value => updatePreference('email_notifications', value)}
-              />
-              <Toggle
-                checked={profile?.preferences?.compact_account_view}
-                disabled={preferencesSaving}
-                label="Compact account view"
-                sub="Prefer denser account panels."
-                onChange={value => updatePreference('compact_account_view', value)}
-              />
-            </div>
-          </div>
-
           <div className={`${CARD} p-5`}>
             <div className="mb-5 flex items-center gap-3">
               <ShieldCheck size={20} className="text-[#e07a5f]" />

@@ -6,3 +6,31 @@ html, body, #root {
   margin: 0;
   padding: 0;
 }
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #9ca3af transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  height: 3px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 9999px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #d9774a;
+}
+
+.dark .thin-scrollbar {
+  scrollbar-color: #4b5563 transparent;
+}
+.dark .thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #374151;
+}
+.dark .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #d9774a;
+}

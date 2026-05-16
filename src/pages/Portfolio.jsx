@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, memo } from 'react';
 import { useMarketData } from '../context/MarketDataContext';
-import { TrendingUp, Wallet, ArrowUpRight, ArrowRightLeft, Plus, Download, RefreshCw } from 'lucide-react';
+import { TrendingUp, Wallet, BadgeDollarSign, Plus, Download, RefreshCw } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
 
 
@@ -44,7 +44,7 @@ function StatCard({ icon: Icon, label, value, sub, valueClass }) {
         <Icon size={14} className="shrink-0" />
         <span className="text-xs uppercase tracking-wider font-medium truncate">{label}</span>
       </div>
-      <span className={`text-lg sm:text-xl lg:text-2xl font-bold break-all ${valueClass ?? 'text-gray-900 dark:text-gray-100'}`}>{value}</span>
+      <span className={`text-2xl font-bold ${valueClass ?? 'text-gray-900 dark:text-gray-100'}`}>{value}</span>
       {sub && <span className="text-xs text-gray-400 dark:text-gray-600">{sub}</span>}
     </div>
   );
@@ -294,6 +294,16 @@ export default function Portfolio() {
     }
   };
 
+  const [feesPaid, setFeesPaid] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    fetch('/api/orders/my-fees', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => data && setFeesPaid(data.total_fees_paid))
+      .catch(() => { });
+  }, [lastOrderUpdate]);
+
   const totalEquity = portfolio ? fmt(portfolio.total_equity) : null;
   const buyingPower = portfolio ? fmt(portfolio.cash.available) : null;
   const totalGain = portfolio ? parseFloat(portfolio.unrealized_pnl) + parseFloat(portfolio.realized_pnl) : null;
@@ -316,12 +326,12 @@ export default function Portfolio() {
   }, [positionsKey]);
 
   return (
-    <div className="space-y-4 font-mono text-gray-900 dark:text-white">
+    <div className="space-y-4 text-gray-900 dark:text-white">
 
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Porfolio Wallet</h1>
+          <h1 className="text-2xl font-black italic tracking-tight">Portfolio Wallet</h1>
         </div>
         <div className="flex gap-2">
           <button
@@ -341,7 +351,7 @@ export default function Portfolio() {
       </div>
 
       {error && (
-        <div className="text-xs font-mono text-red-500 border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-2">
+        <div className="text-xs text-red-500 border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-2">
           Failed to load portfolio: {error}
         </div>
       )}
@@ -350,14 +360,14 @@ export default function Portfolio() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className={`${CARD} p-4 col-span-2 sm:col-span-1 min-w-0`}>
           <span className="text-xs uppercase tracking-wider font-medium text-gray-400 dark:text-gray-500">Total value</span>
-          <p className="text-xl sm:text-2xl lg:text-3xl font-bold mt-1 mb-2 break-all">{loading ? '—' : totalEquity}</p>
+          <p className="text-2xl font-bold mt-1 mb-2">{loading ? '—' : totalEquity}</p>
         </div>
         <div className={`${CARD} p-4 flex flex-col gap-1 min-w-0`}>
           <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500 mb-1">
             <Wallet size={14} />
             <span className="text-xs uppercase tracking-wider font-medium">Cash</span>
           </div>
-          <span className="text-lg sm:text-xl lg:text-2xl font-bold break-all">{loading ? '—' : buyingPower}</span>
+          <span className="text-2xl font-bold">{loading ? '—' : buyingPower}</span>
           <span className="text-xs text-gray-400 dark:text-gray-600">Available</span>
         </div>
         <div className={`${CARD} p-4 flex flex-col gap-1 min-w-0`}>
@@ -365,12 +375,12 @@ export default function Portfolio() {
             <TrendingUp size={14} />
             <span className="text-xs uppercase tracking-wider font-medium">Total gain</span>
           </div>
-          <span className={`text-lg sm:text-xl lg:text-2xl font-bold break-all ${!loading && gainPositive ? 'text-[#e07a5f]' : 'text-gray-500 dark:text-gray-400'}`}>
+          <span className={`text-2xl font-bold ${!loading && gainPositive ? 'text-[#e07a5f]' : 'text-gray-500 dark:text-gray-400'}`}>
             {loading ? '—' : totalGainFmt}
           </span>
           <span className="text-xs text-gray-400 dark:text-gray-600">Unrealized + realized</span>
         </div>
-        <StatCard icon={ArrowRightLeft} label="Buying power" value={loading ? '—' : buyingPower} sub="Available cash" />
+        <StatCard icon={BadgeDollarSign} label="Broker fees paid" value={feesPaid == null ? '—' : fmt(feesPaid)} sub="Total platform fees" />
       </div>
 
       {/* Main grid */}

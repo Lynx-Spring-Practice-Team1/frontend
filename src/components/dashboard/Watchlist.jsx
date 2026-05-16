@@ -12,7 +12,7 @@ function Watchlist({ tickers, watchlistData }) {
   return (
     <CardWrapper title="Watchlist">
       <div className="space-y-3 sm:space-y-4">
-        {tickers.map((ticker) => (
+        {tickers.slice(0, 4).map((ticker) => (
           <div key={ticker} className="flex justify-between items-center gap-2">
             <span className="font-bold text-sm">{ticker}</span>
             <div className="h-6 w-20">

@@ -2,7 +2,7 @@ import { AreaChart, Area, ResponsiveContainer, Tooltip, YAxis } from 'recharts';
 
 const fmt = v => `$${parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-function PortfolioValue({ totalValue = 0, gainAmount = 0, gainPct = 0, chartData = [] }) {
+function PortfolioValue({ totalValue = 0, gainAmount = 0, gainPct = 0, chartData = [], loaded = false }) {
     const pos = gainAmount >= 0;
     const arrow = pos ? '↑' : '↓';
     const gainColor = pos ? 'text-[#e07a5f] dark:text-[#ffb088]' : 'text-gray-500 dark:text-gray-400';
@@ -15,9 +15,9 @@ function PortfolioValue({ totalValue = 0, gainAmount = 0, gainPct = 0, chartData
             <p className="italic text-gray-500 dark:text-gray-400 mb-1 text-xs sm:text-sm">Total portfolio value</p>
             <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
-                    {totalValue > 0 ? fmt(totalValue) : '—'}
+                    {loaded ? fmt(totalValue) : '—'}
                 </h1>
-                {totalValue > 0 && (
+                {loaded && totalValue > 0 && (
                     <span className={`border px-3 py-1 rounded-full text-xs sm:text-sm font-bold w-fit ${badgeBg} ${gainColor}`}>
                         {arrow} {fmt(Math.abs(gainAmount))} · {gainAmount >= 0 ? '+' : ''}{gainPct.toFixed(2)}%
                     </span>

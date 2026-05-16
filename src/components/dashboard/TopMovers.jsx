@@ -26,7 +26,7 @@ function TopMovers({ tickers, watchlistData }) {
   return (
     <CardWrapper title="Top movers (last 10 ticks)">
       <div className="space-y-3">
-        {tickers.map((ticker) => {
+        {tickers.slice(0, 4).map((ticker) => {
           const { pct, pos } = calculatePriceChange(watchlistData, ticker);
           const sign = pos ? '+' : '';
           return (

@@ -7,7 +7,12 @@ function buildWsUrl() {
   return `${protocol}//${window.location.host}/api/ws?token=${encodeURIComponent(token)}`;
 }
 
-export const TICKERS = ["ARKA", "PHNX", "MNVS"];
+export const TICKERS = [
+  "ARKA", "PHNX", "MNVS", "STRM", "NOVA", "BYTE", "QNTM", "CRUX", "ORBT", "VRTX",
+  "AURA", "CRVS", "IRON", "MRCR", "APEX", "GILT", "VALE", "VLCN", "SOLX", "CLDN",
+  "PRMA", "HDRG", "WNDX", "ATLS", "HLIX", "MEDX", "GNTC", "CRYO", "PLSM", "NXGN",
+  "DRAX", "LUMX", "CRST", "VOYA", "AXEL", "MRKT"
+];
 const CANDLE_INTERVAL_SEC = 300; // 5-min candles
 const MARKET_EVENTS_LIMIT = 50;
 

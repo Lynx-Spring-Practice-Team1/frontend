@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import logoSrc from '../assets/t1b.webp';
 import { NavLink } from 'react-router-dom';
 import { useMarketData } from '../context/MarketDataContext';
 import {
@@ -14,13 +15,13 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 const menuItems = [
-  { name: 'Dashboard', icon: Home,          path: '/'          },
-  { name: 'Trade',     icon: ArrowLeftRight, path: '/trade'     },
-  { name: 'Watchlist', icon: Star,           path: '/watchlist' },
-  { name: 'Portfolio', icon: PieChart,       path: '/portfolio' },
-  { name: 'Orders',    icon: ClipboardList,  path: '/orders'    },
-  { name: 'Research',  icon: Search,         path: '/research'  },
-  { name: 'Account',   icon: UserCircle,     path: '/account'   },
+  { name: 'Dashboard', icon: Home, path: '/' },
+  { name: 'Trade', icon: ArrowLeftRight, path: '/trade' },
+  { name: 'Watchlist', icon: Star, path: '/watchlist' },
+  { name: 'Portfolio', icon: PieChart, path: '/portfolio' },
+  { name: 'Orders', icon: ClipboardList, path: '/orders' },
+  { name: 'Research', icon: Search, path: '/research' },
+  { name: 'Account', icon: UserCircle, path: '/account' },
 ];
 
 function NavItems({ expanded, onNavigate }) {
@@ -83,7 +84,7 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
     fetch('/api/portfolio', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(data => data?.cash?.available != null && setCash(data.cash.available))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Initial load
@@ -119,11 +120,11 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
             className="flex items-center gap-3 mb-8 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => setIsOpen(!isOpen)}
           >
-          <img 
-            alt="Logo" 
-            className="h-8 w-8 rounded-full bg-[#d9774a] border border-gray-400 dark:border-gray-700 shrink-0 object-cover" 
-            src="../src/assets/t1b.webp"
-          ></img>
+            <img
+              alt="Logo"
+              className="h-8 w-8 rounded-full bg-[#d9774a] border border-gray-400 dark:border-gray-700 shrink-0 object-cover"
+              src={logoSrc}
+            ></img>
             <AnimatePresence>
               {isOpen && (
                 <motion.span
@@ -176,10 +177,10 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <img
-                    src="../src/assets/t1b.png"
                     alt="Logo"
-                    className="h-8 w-8 rounded-full bg-[#d9774a] border border-gray-400 dark:border-gray-700 shrink-0"
-                  />
+                    className="h-8 w-8 rounded-full bg-[#d9774a] border border-gray-400 dark:border-gray-700 shrink-0 object-cover"
+                    src={logoSrc}
+                  ></img>
                   <span className="font-black italic text-xl tracking-tighter text-gray-900 dark:text-gray-100">
                     Broker
                   </span>
