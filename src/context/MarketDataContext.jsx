@@ -1,4 +1,6 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { DEFAULT_TICKERS, fetchCandles } from './marketDataApi';
+import { MarketDataContext } from './marketDataContext';
 
 function buildWsUrl() {
   const token = localStorage.getItem('token');
@@ -7,35 +9,12 @@ function buildWsUrl() {
   return `${protocol}//${window.location.host}/api/ws?token=${encodeURIComponent(token)}`;
 }
 
-export const TICKERS = [
-  "ARKA", "PHNX", "MNVS", "STRM", "NOVA", "BYTE", "QNTM", "CRUX", "ORBT", "VRTX",
-  "AURA", "CRVS", "IRON", "MRCR", "APEX", "GILT", "VALE", "VLCN", "SOLX", "CLDN",
-  "PRMA", "HDRG", "WNDX", "ATLS", "HLIX", "MEDX", "GNTC", "CRYO", "PLSM", "NXGN",
-  "DRAX", "LUMX", "CRST", "VOYA", "AXEL", "MRKT"
-];
 const CANDLE_INTERVAL_SEC = 300; // 5-min candles
 const MARKET_EVENTS_LIMIT = 50;
 
 function bucketTime(marketTime) {
   const sec = Math.floor(new Date(marketTime).getTime() / 1000);
   return Math.floor(sec / CANDLE_INTERVAL_SEC) * CANDLE_INTERVAL_SEC;
-}
-
-async function fetchCandles(ticker) {
-  try {
-    const res = await fetch(`/api/candles?ticker=${ticker}`);
-    if (!res.ok) return [];
-    const rows = await res.json();
-    return rows.map(r => ({
-      time: Number(r.time),
-      open: Number(r.open),
-      high: Number(r.high),
-      low: Number(r.low),
-      close: Number(r.close),
-    }));
-  } catch {
-    return [];
-  }
 }
 
 async function upsertCandle(ticker, candle) {
@@ -78,19 +57,18 @@ function prependMarketEvent(events, event) {
   ].slice(0, MARKET_EVENTS_LIMIT);
 }
 
-const MarketDataContext = createContext(null);
+function normalizeTicker(ticker) {
+  return String(ticker ?? '').trim().toUpperCase();
+}
 
 export function MarketDataProvider({ children }) {
-  const candleHistoryRef = useRef(null);
-  const currentCandleRef = useRef(null);
+  const candleHistoryRef = useRef(Object.fromEntries(DEFAULT_TICKERS.map(t => [t, []])));
+  const currentCandleRef = useRef(Object.fromEntries(DEFAULT_TICKERS.map(t => [t, null])));
   const loadedRef = useRef(false);
-
-  if (candleHistoryRef.current === null) {
-    candleHistoryRef.current = Object.fromEntries(TICKERS.map(t => [t, []]));
-    currentCandleRef.current = Object.fromEntries(TICKERS.map(t => [t, null]));
-  }
+  const tickersRef = useRef(DEFAULT_TICKERS);
 
   const lastDbSaveRef = useRef(0);
+  const [tickers, setTickers] = useState(DEFAULT_TICKERS);
   const [latestUpdate, setLatestUpdate] = useState(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [lastOrderUpdate, setLastOrderUpdate] = useState(null);
@@ -103,7 +81,7 @@ export function MarketDataProvider({ children }) {
     loadedRef.current = true;
 
     Promise.all(
-      TICKERS.map(async ticker => {
+      DEFAULT_TICKERS.map(async ticker => {
         const candles = await fetchCandles(ticker);
         if (candles.length === 0) return;
         candleHistoryRef.current[ticker] = candles.slice(0, -1);
@@ -149,9 +127,19 @@ export function MarketDataProvider({ children }) {
 
         if (msg.type !== 'PRICE_UPDATE') return;
 
-        const { ticker, price, market_time } = msg.payload ?? {};
+        const { price, market_time } = msg.payload ?? {};
+        const ticker = normalizeTicker(msg.payload?.ticker);
         if (!ticker || price == null || !market_time) return;
-        if (!TICKERS.includes(ticker)) return;
+
+        if (!Object.prototype.hasOwnProperty.call(candleHistoryRef.current, ticker)) {
+          candleHistoryRef.current[ticker] = [];
+          currentCandleRef.current[ticker] = null;
+        }
+
+        if (!tickersRef.current.includes(ticker)) {
+          tickersRef.current = [...tickersRef.current, ticker];
+          setTickers(tickersRef.current);
+        }
 
         const bucketSec = bucketTime(market_time);
         const current = currentCandleRef.current[ticker];
@@ -184,7 +172,7 @@ export function MarketDataProvider({ children }) {
 
         const now = Date.now();
         if (now - lastDbSaveRef.current > 30_000) {
-          for (const t of TICKERS) {
+          for (const t of tickersRef.current) {
             const c = currentCandleRef.current[t];
             if (c) upsertCandle(t, c);
           }
@@ -213,18 +201,18 @@ export function MarketDataProvider({ children }) {
     };
   }, []);
 
-  function getCandleData(ticker) {
+  const getCandleData = useCallback((ticker) => {
     const history = candleHistoryRef.current[ticker] ?? [];
     const current = currentCandleRef.current[ticker];
     return current ? [...history, current] : [...history];
-  }
+  }, []);
 
   return (
     <MarketDataContext.Provider value={{
       latestUpdate,
       getCandleData,
       historyLoaded,
-      tickers: TICKERS,
+      tickers,
       lastOrderUpdate,
       marketEvents,
       marketEventsLoaded,
@@ -233,8 +221,4 @@ export function MarketDataProvider({ children }) {
       {children}
     </MarketDataContext.Provider>
   );
-}
-
-export function useMarketData() {
-  return useContext(MarketDataContext);
 }

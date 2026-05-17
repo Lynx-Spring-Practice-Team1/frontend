@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Activity, Clock, Radio, Zap, TrendingUp, TrendingDown, AlertTriangle, BarChart2 } from 'lucide-react';
-import { useMarketData } from '../context/MarketDataContext';
+import { useMarketData } from '../context/useMarketData';
 
 const ACCENT = '#d9774a';
 const CARD = 'bg-[#f0f0f0] dark:bg-[#252525] border border-gray-400 dark:border-gray-700 rounded-xl transition-colors';

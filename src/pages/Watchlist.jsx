@@ -1,6 +1,6 @@
-import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { useMarketData, TICKERS } from '../context/MarketDataContext';
+import { useMarketData } from '../context/useMarketData';
 
 function StockCard({ ticker, isDark }) {
   const { getCandleData, latestUpdate } = useMarketData();
@@ -91,29 +91,12 @@ function StockCard({ ticker, isDark }) {
 }
 
 export default function Watchlist({ isDark = false }) {
-  const headerBg = isDark
-    ? 'bg-[#252525] border-gray-700'
-    : 'bg-[#f0f0f0] border-gray-400';
-  const btnBg = isDark
-    ? 'bg-[#252525] border-gray-700 text-gray-300 hover:bg-[#2a2a2a]'
-    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50';
+  const { tickers } = useMarketData();
 
   return (
-    <div className="space-y-6">
-      <div className={`border rounded-xl p-4 sm:p-6 ${headerBg}`}>
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          <button className="px-3 sm:px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold bg-[#e07a5f] border-[#e07a5f] text-white">
-            All ({TICKERS.length})
-          </button>
-          <button className={`px-3 sm:px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold transition-all duration-200 ${btnBg} flex items-center gap-1`}>
-            <Plus size={16} />
-            <span className="hidden sm:inline">Add</span>
-          </button>
-        </div>
-      </div>
-
+    <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-        {TICKERS.map(ticker => (
+        {tickers.map(ticker => (
           <StockCard key={ticker} ticker={ticker} isDark={isDark} />
         ))}
       </div>

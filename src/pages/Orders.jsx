@@ -5,18 +5,18 @@ import StatCard from '../components/orders/StatCard.jsx';
 import OrdersTable from '../components/orders/OrdersTable.jsx';
 import TodayActivity from '../components/orders/TodayActivity.jsx';
 import OrderPanel from '../components/OrderPanel';
-import { useMarketData } from '../context/MarketDataContext';
+import { useMarketData } from '../context/useMarketData';
 
 export default function Orders({ isDark = false }) {
     const { orders, loading, error, placeOrder, cancelOrder } = useOrders();
     const { tickers, latestUpdate, getCandleData, historyLoaded } = useMarketData();
     const [selectedTicker, setSelectedTicker] = useState('');
     const [candles, setCandles] = useState({});
+    const activeTicker = selectedTicker || tickers[0] || '';
 
-    // Seed from historical candle data once loaded; also set default ticker
+    // Seed from historical candle data once loaded.
     useEffect(() => {
         if (!historyLoaded) return;
-        if (!selectedTicker && tickers.length > 0) setSelectedTicker(tickers[0]);
         const init = {};
         for (const t of tickers) {
             const data = getCandleData(t);
@@ -24,7 +24,7 @@ export default function Orders({ isDark = false }) {
             if (last) init[t] = last;
         }
         setCandles(init);
-    }, [historyLoaded]);
+    }, [historyLoaded, tickers, getCandleData]);
 
     // Update on every live price tick
     useEffect(() => {
@@ -33,7 +33,7 @@ export default function Orders({ isDark = false }) {
         setCandles(prev => ({ ...prev, [ticker]: candle }));
     }, [latestUpdate]);
 
-    const currentPrice = candles[selectedTicker]?.close ?? 0;
+    const currentPrice = candles[activeTicker]?.close ?? 0;
 
     // Fetch portfolio positions so OrderPanel can validate SELL orders
     const [positions, setPositions] = useState([]);
@@ -78,7 +78,7 @@ export default function Orders({ isDark = false }) {
                 <div className="flex-1 lg:flex-none min-w-0">
                     <OrderPanel
                         isDark={isDark}
-                        activeTicker={selectedTicker}
+                        activeTicker={activeTicker}
                         currentPrice={currentPrice}
                         showSymbolInput={true}
                         symbolOptions={tickers}

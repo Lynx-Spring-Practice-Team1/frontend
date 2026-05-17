@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, memo } from 'react';
-import { useMarketData } from '../context/MarketDataContext';
+import { useMarketData } from '../context/useMarketData';
 import { TrendingUp, Wallet, BadgeDollarSign, Plus, Download, RefreshCw } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
 

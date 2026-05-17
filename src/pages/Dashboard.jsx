@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useMarketData, TICKERS } from '../context/MarketDataContext';
+import { useMarketData } from '../context/useMarketData';
 import AllocationCard from '../components/dashboard/Alocation';
 import PortfolioValue from '../components/dashboard/PortfolioValue';
 import TopMovers from '../components/dashboard/TopMovers';
@@ -11,7 +11,7 @@ const fmtSnapTime = iso =>
     new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 export default function Dashboard() {
-    const { getCandleData, historyLoaded, latestUpdate, lastOrderUpdate } = useMarketData();
+    const { getCandleData, historyLoaded, latestUpdate, lastOrderUpdate, tickers } = useMarketData();
 
 
     const [watchlistData, setWatchlistData] = useState({});
@@ -19,12 +19,12 @@ export default function Dashboard() {
     useEffect(() => {
         if (!historyLoaded) return;
         const newData = {};
-        TICKERS.forEach(ticker => {
+        tickers.forEach(ticker => {
             const allData = getCandleData(ticker);
             newData[ticker] = allData.slice(-DASHBOARD_MAX_CANDLES);
         });
         setWatchlistData(newData);
-    }, [historyLoaded, getCandleData]);
+    }, [historyLoaded, getCandleData, tickers]);
 
     useEffect(() => {
         if (!latestUpdate) return;
@@ -151,8 +151,8 @@ export default function Dashboard() {
                 loaded={portfolio !== null}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
-                <TopMovers tickers={TICKERS} watchlistData={watchlistData} />
-                <Watchlist tickers={TICKERS} watchlistData={watchlistData} />
+                <TopMovers tickers={tickers} watchlistData={watchlistData} />
+                <Watchlist tickers={tickers} watchlistData={watchlistData} />
                 <AllocationCard data={allocationData} />
             </div>
         </div>

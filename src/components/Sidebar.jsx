@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import logoSrc from '../assets/t1b.webp';
 import { NavLink } from 'react-router-dom';
-import { useMarketData } from '../context/MarketDataContext';
+import { useMarketData } from '../context/useMarketData';
 import {
   Home,
   ArrowLeftRight,

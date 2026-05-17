@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useMarketData } from '../../context/MarketDataContext';
+import { useMarketData } from '../../context/useMarketData';
 
 function authHeaders(json = false) {
   const token = localStorage.getItem('token');

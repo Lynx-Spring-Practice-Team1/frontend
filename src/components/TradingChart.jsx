@@ -1,6 +1,19 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries } from 'lightweight-charts';
-import { useMarketData } from '../context/MarketDataContext';
+import { useMarketData } from '../context/useMarketData';
+import { fetchCandles } from '../context/marketDataApi';
+
+const FIVE_MINUTES_SEC = 5 * 60;
+const DAY_SEC = 24 * 60 * 60;
+
+const RANGE_CONFIG = {
+    '1d': { value: '1d', label: '1D', rangeSeconds: DAY_SEC, bucketSizeSec: FIVE_MINUTES_SEC },
+    '1w': { value: '1w', label: '1W', rangeSeconds: 7 * DAY_SEC, bucketSizeSec: 30 * 60 },
+    '1m': { value: '1m', label: '1M', rangeSeconds: 30 * DAY_SEC, bucketSizeSec: 2 * 60 * 60 },
+    all: { value: 'all', label: 'All', rangeSeconds: null, bucketSizeSec: DAY_SEC },
+};
+
+const CHART_RANGES = Object.values(RANGE_CONFIG);
 
 // ── Candle validation & sanitization ─────────────────────────────────────────
 
@@ -37,6 +50,46 @@ function sanitizeCandles(candles) {
         }
         return acc;
     }, []);
+}
+
+function aggregateCandles(candles, bucketSizeSec = FIVE_MINUTES_SEC) {
+    const data = sanitizeCandles(candles);
+    if (bucketSizeSec <= FIVE_MINUTES_SEC) return data;
+
+    return data.reduce((acc, candle) => {
+        const bucketTime = Math.floor(candle.time / bucketSizeSec) * bucketSizeSec;
+        const current = acc[acc.length - 1];
+
+        if (current?.time === bucketTime) {
+            current.high = Math.max(current.high, candle.high);
+            current.low = Math.min(current.low, candle.low);
+            current.close = candle.close;
+            return acc;
+        }
+
+        acc.push({
+            time: bucketTime,
+            open: candle.open,
+            high: candle.high,
+            low: candle.low,
+            close: candle.close,
+        });
+        return acc;
+    }, []);
+}
+
+function trimCandlesToRange(candles, range = 'all') {
+    const data = sanitizeCandles(candles);
+    const rangeSeconds = RANGE_CONFIG[range]?.rangeSeconds;
+    if (!rangeSeconds || data.length === 0) return data;
+
+    const latestTime = data[data.length - 1].time;
+    const startTime = latestTime - rangeSeconds;
+    return data.filter(candle => candle.time >= startTime);
+}
+
+function mergeCandle(candles, candle) {
+    return sanitizeCandles([...candles, candle]);
 }
 
 // ── Error boundary — last line of defence against page blackout ───────────────
@@ -91,6 +144,12 @@ const TradingChartInner = ({ isDark = false, activeTicker = '', onTickerChange, 
     const chartRef = useRef(null);
     const seriesRef = useRef(null);
     const activeTickerRef = useRef(activeTicker);
+    const chartRangeRef = useRef('1d');
+    const rawDataRef = useRef([]);
+    const visibleDataRef = useRef([]);
+    const liveFollowRef = useRef(true);
+    const suppressRangeChangeRef = useRef(false);
+    const [chartRange, setChartRange] = useState('1d');
 
     const { latestUpdate, getCandleData, historyLoaded, tickers } = useMarketData();
 
@@ -117,16 +176,65 @@ const TradingChartInner = ({ isDark = false, activeTicker = '', onTickerChange, 
         border: 'none', borderRadius: '8px', cursor: 'pointer',
     };
 
+    const rangeButtonStyle = {
+        fontFamily: 'sans-serif', fontSize: '13px', fontWeight: '600',
+        padding: '6px 12px',
+        backgroundColor: isDark ? '#2a2a2a' : '#f0f3fa',
+        color: isDark ? '#d1d5db' : '#333',
+        border: '1px solid transparent',
+        borderRadius: '8px',
+        cursor: 'pointer',
+    };
+    const rangeButtonActiveStyle = {
+        borderColor: '#d9774a',
+        color: isDark ? '#f2c6ad' : '#b85827',
+        backgroundColor: isDark ? '#3d2e26' : 'rgb(249, 236, 228)',
+    };
+
+    const scrollToRealtime = () => {
+        try { chartRef.current?.timeScale().scrollToRealTime(); } catch {
+            // Ignore scroll calls that race with chart teardown.
+        }
+    };
+
+    const getAggregatedData = (candles = rawDataRef.current, range = chartRangeRef.current) => {
+        const trimmed = trimCandlesToRange(candles, range);
+        return aggregateCandles(trimmed, RANGE_CONFIG[range]?.bucketSizeSec ?? FIVE_MINUTES_SEC);
+    };
+
+    const setSeriesData = (candles, { fit = false, follow = false } = {}) => {
+        try {
+            if (!seriesRef.current) return;
+            const data = sanitizeCandles(candles);
+            visibleDataRef.current = data;
+            seriesRef.current.setData(data);
+            if (data.length === 0) return;
+
+            if (fit) {
+                suppressRangeChangeRef.current = true;
+                chartRef.current?.timeScale().fitContent();
+                window.setTimeout(() => { suppressRangeChangeRef.current = false; }, 0);
+            } else if (follow) {
+                suppressRangeChangeRef.current = true;
+                scrollToRealtime();
+                window.setTimeout(() => { suppressRangeChangeRef.current = false; }, 0);
+            }
+        } catch (e) {
+            console.error('[TradingChart] setSeriesData failed:', e);
+        }
+    };
+
+    const renderCurrentRange = ({ fit = false, follow = false } = {}) => {
+        setSeriesData(getAggregatedData(), { fit, follow });
+    };
+
     // Safely rebuild the entire series from the current data buffer.
     // Used as a fallback when update() rejects a candle (time went backwards, desync, etc.)
     const safeResetSeries = () => {
         try {
-            if (!seriesRef.current) return;
-            const data = sanitizeCandles(getCandleData(activeTickerRef.current));
-            if (data.length > 0) {
-                seriesRef.current.setData(data);
-                chartRef.current?.timeScale().fitContent();
-            }
+            const fallbackRawData = sanitizeCandles(getCandleData(activeTickerRef.current));
+            rawDataRef.current = fallbackRawData;
+            renderCurrentRange({ fit: true });
         } catch (e) {
             console.error('[TradingChart] safeResetSeries failed:', e);
         }
@@ -152,27 +260,61 @@ const TradingChartInner = ({ isDark = false, activeTicker = '', onTickerChange, 
                 wickUpColor: '#26a69a', wickDownColor: '#ef5350',
             });
 
-            const initial = sanitizeCandles(getCandleData(activeTickerRef.current));
-            if (initial.length > 0) {
-                seriesRef.current.setData(initial);
-                chartRef.current.timeScale().fitContent();
-            }
+            rawDataRef.current = sanitizeCandles(getCandleData(activeTickerRef.current));
+            renderCurrentRange({ fit: true });
         } catch (e) {
             console.error('[TradingChart] init failed:', e);
         }
 
         return () => {
-            try { chartRef.current?.remove(); } catch (_) {}
+            try { chartRef.current?.remove(); } catch {
+                // Ignore chart cleanup errors from already-disposed instances.
+            }
             chartRef.current = null;
             seriesRef.current = null;
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Load historical data once the context has finished fetching
+    // User interaction: if the user scrolls/zooms away from the latest candle, pause live-follow.
     useEffect(() => {
-        if (!historyLoaded || !seriesRef.current) return;
-        safeResetSeries();
-    }, [historyLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+        const timeScale = chartRef.current?.timeScale();
+        if (!timeScale) return;
+
+        const handleVisibleRangeChange = (logicalRange) => {
+            if (suppressRangeChangeRef.current || !logicalRange) return;
+            const lastIndex = visibleDataRef.current.length - 1;
+            if (lastIndex < 0) return;
+            liveFollowRef.current = logicalRange.to >= lastIndex - 1;
+        };
+
+        timeScale.subscribeVisibleLogicalRangeChange(handleVisibleRangeChange);
+        return () => {
+            try { timeScale.unsubscribeVisibleLogicalRangeChange(handleVisibleRangeChange); } catch {
+                // Ignore cleanup if the chart was already removed.
+            }
+        };
+    }, []);
+
+    // Load historical data for the selected ticker and simulated range.
+    useEffect(() => {
+        if (!historyLoaded || !seriesRef.current || !activeTicker) return;
+        activeTickerRef.current = activeTicker;
+        chartRangeRef.current = chartRange;
+        liveFollowRef.current = true;
+
+        let cancelled = false;
+        fetchCandles(activeTicker, chartRange)
+            .then(candles => {
+                if (cancelled) return;
+                rawDataRef.current = sanitizeCandles(candles.length > 0 ? candles : getCandleData(activeTicker));
+                renderCurrentRange({ fit: true });
+            })
+            .catch(() => {
+                if (!cancelled) safeResetSeries();
+            });
+
+        return () => { cancelled = true; };
+    }, [activeTicker, chartRange, historyLoaded, getCandleData]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Theme changes
     useEffect(() => {
@@ -190,7 +332,9 @@ const TradingChartInner = ({ isDark = false, activeTicker = '', onTickerChange, 
 
     // Height changes
     useEffect(() => {
-        try { chartRef.current?.applyOptions({ height }); } catch (_) {}
+        try { chartRef.current?.applyOptions({ height }); } catch {
+            // Ignore resize calls that race with chart teardown.
+        }
     }, [height]);
 
     // Live price tick — the most common crash source
@@ -207,7 +351,8 @@ const TradingChartInner = ({ isDark = false, activeTicker = '', onTickerChange, 
         };
 
         try {
-            seriesRef.current?.update(candle);
+            rawDataRef.current = mergeCandle(rawDataRef.current, candle);
+            renderCurrentRange({ follow: liveFollowRef.current });
         } catch (e) {
             // lightweight-charts throws when time goes backwards (DB desync, service restart).
             // Recover by rebuilding the full series from the sanitized in-memory buffer.
@@ -215,13 +360,6 @@ const TradingChartInner = ({ isDark = false, activeTicker = '', onTickerChange, 
             safeResetSeries();
         }
     }, [latestUpdate]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // Ticker switch
-    useEffect(() => {
-        if (activeTicker === activeTickerRef.current) return;
-        activeTickerRef.current = activeTicker;
-        safeResetSeries();
-    }, [activeTicker]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div style={{ position: 'relative', width: '100%' }}>
@@ -243,12 +381,31 @@ const TradingChartInner = ({ isDark = false, activeTicker = '', onTickerChange, 
                     </button>
                 ))}
             </div>
+            <div
+                style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}
+            >
+                {CHART_RANGES.map(range => (
+                    <button
+                        key={range.value}
+                        type="button"
+                        style={
+                            chartRange === range.value
+                                ? { ...rangeButtonStyle, ...rangeButtonActiveStyle }
+                                : rangeButtonStyle
+                        }
+                        onClick={() => setChartRange(range.value)}
+                    >
+                        {range.label}
+                    </button>
+                ))}
+            </div>
             <div ref={chartContainerRef} />
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                 <button
                     style={goToRealtimeStyle}
                     onClick={() => {
-                        try { chartRef.current?.timeScale().scrollToRealTime(); } catch (_) {}
+                        liveFollowRef.current = true;
+                        scrollToRealtime();
                     }}
                 >
                     Go to realtime

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import TradingChart from '../components/TradingChart';
 import OrderPanel from '../components/OrderPanel';
 import TodayActivity from '../components/orders/TodayActivity.jsx';
-import { useMarketData } from '../context/MarketDataContext';
+import { useMarketData } from '../context/useMarketData';
 import useOrders from '../components/orders/useOrders.js';
 
 function useChartHeight() {
@@ -22,10 +22,10 @@ export default function Trade({ isDark }) {
     const chartHeight = useChartHeight();
 
     const [candles, setCandles] = useState({});
+    const selectedTicker = activeTicker || tickers[0] || '';
 
     useEffect(() => {
         if (!historyLoaded) return;
-        if (!activeTicker && tickers.length > 0) setActiveTicker(tickers[0]);
         const init = {};
         for (const t of tickers) {
             const data = getCandleData(t);
@@ -33,7 +33,7 @@ export default function Trade({ isDark }) {
             if (last) init[t] = last;
         }
         setCandles(init);
-    }, [historyLoaded]);
+    }, [historyLoaded, tickers, getCandleData]);
 
     useEffect(() => {
         if (!latestUpdate) return;
@@ -41,13 +41,13 @@ export default function Trade({ isDark }) {
         setCandles(prev => ({ ...prev, [ticker]: candle }));
     }, [latestUpdate]);
 
-    const activeCandle = candles[activeTicker];
+    const activeCandle = candles[selectedTicker];
     const price = activeCandle?.close ?? 0;
     const change = activeCandle ? activeCandle.close - activeCandle.open : 0;
     const changePct = activeCandle?.open > 0 ? (change / activeCandle.open * 100) : 0;
     const isPos = change >= 0;
 
-    const name = activeTicker;
+    const name = selectedTicker;
     const exchange = '';
 
     const filledCount = orders.filter(o => o.status === 'FILLED').length;
@@ -72,7 +72,7 @@ export default function Trade({ isDark }) {
                 <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
                     <div className="flex items-baseline gap-2.5">
                         <span className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
-                            {activeTicker}
+                            {selectedTicker}
                         </span>
                         <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                             {name} · {exchange}
@@ -94,7 +94,7 @@ export default function Trade({ isDark }) {
                 <div className={`rounded-xl border p-3 sm:p-4 ${isDark ? 'bg-[#252525] border-gray-700' : 'bg-[#f0f0f0] border-gray-400'}`}>
                     <TradingChart
                         isDark={isDark}
-                        activeTicker={activeTicker}
+                        activeTicker={selectedTicker}
                         onTickerChange={setActiveTicker}
                         height={chartHeight}
                     />
@@ -106,7 +106,7 @@ export default function Trade({ isDark }) {
                     <div className="flex-1 lg:flex-none min-w-0">
                         <OrderPanel
                             isDark={isDark}
-                            activeTicker={activeTicker}
+                            activeTicker={selectedTicker}
                             currentPrice={price}
                             onSubmit={placeOrder}
                             showSymbolInput={true}
