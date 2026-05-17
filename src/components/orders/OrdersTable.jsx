@@ -28,6 +28,7 @@ function priceLabel(order) {
 export default function OrdersTable({ isDark, orders, cancelOrder }) {
     const [activeTab, setActiveTab] = useState('Pending');
     const filtered = filterOrders(orders, activeTab);
+    const showFee = activeTab === 'Filled';
 
     const thCls = `px-4 py-3 text-left text-xs font-semibold tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`;
     const tdCls = `px-4 py-3 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`;
@@ -63,12 +64,13 @@ export default function OrdersTable({ isDark, orders, cancelOrder }) {
                     <thead>
                         <tr className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-300'}`}>
                             {COLUMNS.map(col => <th key={col} className={thCls}>{col}</th>)}
+                            {showFee && <th className={thCls}>EXCHANGE FEE</th>}
                         </tr>
                     </thead>
                     <tbody>
                         {filtered.length === 0 ? (
                             <tr>
-                                <td colSpan={COLUMNS.length} className={`px-4 py-10 text-center italic ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+                                <td colSpan={COLUMNS.length + (showFee ? 1 : 0)} className={`px-4 py-10 text-center italic ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
                                     No {activeTab.toLowerCase()} orders
                                 </td>
                             </tr>
@@ -100,6 +102,11 @@ export default function OrdersTable({ isDark, orders, cancelOrder }) {
                                         </button>
                                     )}
                                 </td>
+                                {showFee && (
+                                    <td className={`px-4 py-3 font-mono text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        {order.exchange_fee != null ? `$${Number(order.exchange_fee).toFixed(2)}` : '—'}
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>

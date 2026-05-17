@@ -49,6 +49,10 @@ export default function Orders({ isDark = false }) {
     const activeCount = orders.filter(isActive).length;
     const filledCount = orders.filter(o => o.status === 'FILLED').length;
     const cancelledCount = orders.filter(o => o.status === 'CANCELLED').length;
+    const totalExchangeFees = orders
+        .filter(o => o.status === 'FILLED')
+        .reduce((sum, o) => sum + (o.exchange_fee ?? 0), 0)
+        .toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
     const openValue = orders
         .filter(isActive)
         .reduce((sum, o) => sum + ((o.price ?? 0) * o.qty), 0)
@@ -68,7 +72,7 @@ export default function Orders({ isDark = false }) {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <StatCard isDark={isDark} label="Active Orders" value={loading ? '...' : activeCount} sub="Pending / accepted" valueClass="text-blue-400" />
                     <StatCard isDark={isDark} label="Filled" value={loading ? '...' : filledCount} sub="Executed" valueClass="text-green-500" />
-                    <StatCard isDark={isDark} label="Cancelled" value={loading ? '...' : cancelledCount} sub="Today" />
+                    <StatCard isDark={isDark} label="Exchange Fees" value={loading ? '...' : totalExchangeFees} sub="Total paid" />
                     <StatCard isDark={isDark} label="Active Value" value={loading ? '...' : openValue} sub="At limit price" />
                 </div>
                 <OrdersTable isDark={isDark} orders={orders} cancelOrder={cancelOrder} />

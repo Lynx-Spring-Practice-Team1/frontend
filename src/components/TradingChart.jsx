@@ -169,13 +169,6 @@ const TradingChartInner = ({ isDark = false, activeTicker = '', onTickerChange, 
         cursor: 'pointer',
     };
     const tickerButtonActiveStyle = { borderColor: '#d9774a' };
-    const goToRealtimeStyle = {
-        fontFamily: 'sans-serif', fontSize: '14px', padding: '6px 20px',
-        backgroundColor: isDark ? '#2a2a2a' : '#f0f3fa',
-        color: isDark ? '#d1d5db' : '#333',
-        border: 'none', borderRadius: '8px', cursor: 'pointer',
-    };
-
     const rangeButtonStyle = {
         fontFamily: 'sans-serif', fontSize: '13px', fontWeight: '600',
         padding: '6px 12px',
@@ -381,9 +374,18 @@ const TradingChartInner = ({ isDark = false, activeTicker = '', onTickerChange, 
                     </button>
                 ))}
             </div>
-            <div
-                style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}
-            >
+            <div ref={chartContainerRef} />
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                <button
+                    type="button"
+                    style={rangeButtonStyle}
+                    onClick={() => {
+                        liveFollowRef.current = true;
+                        scrollToRealtime();
+                    }}
+                >
+                    Go to realtime
+                </button>
                 {CHART_RANGES.map(range => (
                     <button
                         key={range.value}
@@ -398,18 +400,6 @@ const TradingChartInner = ({ isDark = false, activeTicker = '', onTickerChange, 
                         {range.label}
                     </button>
                 ))}
-            </div>
-            <div ref={chartContainerRef} />
-            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                <button
-                    style={goToRealtimeStyle}
-                    onClick={() => {
-                        liveFollowRef.current = true;
-                        scrollToRealtime();
-                    }}
-                >
-                    Go to realtime
-                </button>
             </div>
         </div>
     );

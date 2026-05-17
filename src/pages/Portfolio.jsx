@@ -295,6 +295,7 @@ export default function Portfolio() {
   };
 
   const [feesPaid, setFeesPaid] = useState(null);
+  const [feeRate, setFeeRate] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -303,6 +304,14 @@ export default function Portfolio() {
       .then(data => data && setFeesPaid(data.total_fees_paid))
       .catch(() => { });
   }, [lastOrderUpdate]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    fetch('/api/orders/fees', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => data && setFeeRate(parseFloat(data.platform_fee_rate)))
+      .catch(() => { });
+  }, []);
 
   const totalEquity = portfolio ? fmt(portfolio.total_equity) : null;
   const buyingPower = portfolio ? fmt(portfolio.cash.available) : null;
@@ -458,6 +467,13 @@ export default function Portfolio() {
                   const pos = gain.startsWith('+');
                   const maxQty = Math.floor(parseFloat(p.quantity));
                   const isActive = sellTarget?.symbol === p.symbol;
+
+                  const sellQtyNum = parseInt(sellQty, 10);
+                  const currentPrice = parseFloat(p.latest_price || 0);
+                  const saleValue = isActive && sellQtyNum > 0 && currentPrice > 0 ? sellQtyNum * currentPrice : 0;
+                  const brokerFee = saleValue > 0 && feeRate != null ? saleValue * feeRate : null;
+                  const estimatedProceeds = brokerFee != null ? saleValue - brokerFee : null;
+
                   return (
                     <tr key={i} className="border-b border-gray-200 dark:border-gray-700/50 last:border-0">
                       <td className="py-3 font-bold">{p.symbol}</td>
@@ -466,26 +482,40 @@ export default function Portfolio() {
                       <td className={`py-3 text-right font-bold break-all ${pos ? 'text-[#e07a5f]' : 'text-gray-500 dark:text-gray-400'}`}>{gain}</td>
                       <td className="py-3 text-right">
                         {isActive ? (
-                          <span className="flex items-center justify-end gap-1">
-                            <input
-                              type="number" min="1" max={maxQty}
-                              value={sellQty}
-                              onChange={e => { setSellQty(e.target.value); setSellError(null); }}
-                              className="w-14 px-1 py-0.5 text-xs rounded border border-gray-400 dark:border-gray-600 bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 text-center"
-                              placeholder="qty"
-                              autoFocus
-                            />
-                            <button
-                              onClick={handleSell}
-                              disabled={sellSubmitting}
-                              className="text-xs px-2 py-0.5 rounded bg-[#e07a5f] text-white font-medium disabled:opacity-50"
-                            >
-                              {sellSubmitting ? '…' : 'Confirm'}
-                            </button>
-                            <button
-                              onClick={() => { setSellTarget(null); setSellQty(''); setSellError(null); }}
-                              className="text-xs px-1.5 py-0.5 rounded border border-gray-400 dark:border-gray-600 text-gray-500"
-                            >✕</button>
+                          <span className="flex flex-col items-end gap-1">
+                            <span className="flex items-center justify-end gap-1">
+                              <input
+                                type="number" min="1" max={maxQty}
+                                value={sellQty}
+                                onChange={e => { setSellQty(e.target.value); setSellError(null); }}
+                                className="w-14 px-1 py-0.5 text-xs rounded border border-gray-400 dark:border-gray-600 bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 text-center"
+                                placeholder="qty"
+                                autoFocus
+                              />
+                              <button
+                                onClick={handleSell}
+                                disabled={sellSubmitting}
+                                className="text-xs px-2 py-0.5 rounded bg-[#e07a5f] text-white font-medium disabled:opacity-50"
+                              >
+                                {sellSubmitting ? '…' : 'Confirm'}
+                              </button>
+                              <button
+                                onClick={() => { setSellTarget(null); setSellQty(''); setSellError(null); }}
+                                className="text-xs px-1.5 py-0.5 rounded border border-gray-400 dark:border-gray-600 text-gray-500"
+                              >✕</button>
+                            </span>
+                            {saleValue > 0 && (
+                              <span className="text-right leading-relaxed" style={{ fontSize: '10px' }}>
+                                <span className="text-gray-500 dark:text-gray-400">{fmt(saleValue)}</span>
+                                {brokerFee != null && (
+                                  <span className="text-gray-400 dark:text-gray-600"> − {fmt(brokerFee)} broker</span>
+                                )}
+                                <span className="text-gray-400 dark:text-gray-600"> − exchange fee</span>
+                                {estimatedProceeds != null && (
+                                  <span className="font-semibold text-gray-700 dark:text-gray-300"> ≈ {fmt(estimatedProceeds)}</span>
+                                )}
+                              </span>
+                            )}
                           </span>
                         ) : (
                           <button
