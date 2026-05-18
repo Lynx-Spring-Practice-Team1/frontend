@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useRef, useMemo, memo } from 'react';
 import { useMarketData } from '../context/useMarketData';
-import { TrendingUp, Wallet, BadgeDollarSign, Plus, Download, RefreshCw } from 'lucide-react';
+import { TrendingUp, Wallet, BadgeDollarSign, Plus, Download, RefreshCw, TrendingDown } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
 
 
@@ -294,14 +294,57 @@ export default function Portfolio() {
     }
   };
 
+  const [sellAllConfirm, setSellAllConfirm] = useState(false);
+  const [sellAllLoading, setSellAllLoading] = useState(false);
+  const [sellAllError, setSellAllError] = useState(null);
+
+  const handleSellAll = async () => {
+    const positions = (portfolio?.positions || []).filter(p => Math.floor(parseFloat(p.quantity)) > 0);
+    if (!positions.length) return;
+    setSellAllLoading(true);
+    setSellAllError(null);
+    const token = localStorage.getItem('token');
+    try {
+      const results = await Promise.allSettled(
+        positions.map(p =>
+          fetch('/api/orders/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              symbol: p.symbol,
+              side: 'SELL',
+              order_type: 'MARKET',
+              quantity: Math.floor(parseFloat(p.quantity)),
+            }),
+          }).then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(new Error(d.detail || `Error ${r.status}`))))
+        )
+      );
+      const failed = results.filter(r => r.status === 'rejected');
+      if (failed.length) {
+        setSellAllError(`${failed.length} order(s) failed: ${failed[0].reason?.message}`);
+      }
+      load();
+    } catch (e) {
+      setSellAllError(e.message);
+    } finally {
+      setSellAllLoading(false);
+      setSellAllConfirm(false);
+    }
+  };
+
   const [feesPaid, setFeesPaid] = useState(null);
+  const [exchangeFeesPaid, setExchangeFeesPaid] = useState(null);
   const [feeRate, setFeeRate] = useState(null);
 
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     fetch('/api/orders/my-fees', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => data && setFeesPaid(data.total_fees_paid))
+      .then(data => {
+        if (!data) return;
+        setFeesPaid(data.total_fees_paid);
+        setExchangeFeesPaid(data.total_exchange_fees);
+      })
       .catch(() => { });
   }, [lastOrderUpdate]);
 
@@ -342,7 +385,7 @@ export default function Portfolio() {
         <div>
           <h1 className="text-2xl font-black italic tracking-tight">Portfolio Wallet</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={load}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-gray-400 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -356,12 +399,46 @@ export default function Portfolio() {
           <button onClick={() => setWithdrawOpen(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
             <Download size={14} /> Withdraw
           </button>
+
+          {/* Sell All */}
+          {!sellAllConfirm ? (
+            <button
+              onClick={() => { setSellAllConfirm(true); setSellAllError(null); }}
+              disabled={!portfolio?.positions?.length}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold border border-red-400 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <TrendingDown size={14} />
+              Sell All {portfolio?.positions?.length > 0 && `(${portfolio.positions.filter(p => parseFloat(p.quantity) > 0).length})`}
+            </button>
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Sell everything?</span>
+              <button
+                onClick={handleSellAll}
+                disabled={sellAllLoading}
+                className="px-3 py-2 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition-colors"
+              >
+                {sellAllLoading ? 'Selling…' : 'Confirm'}
+              </button>
+              <button
+                onClick={() => { setSellAllConfirm(false); setSellAllError(null); }}
+                className="px-3 py-2 rounded-lg text-xs font-bold border border-gray-400 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+            </span>
+          )}
         </div>
       </div>
 
       {error && (
         <div className="text-xs text-red-500 border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-2">
           Failed to load portfolio: {error}
+        </div>
+      )}
+      {sellAllError && (
+        <div className="text-xs text-red-500 border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-2">
+          Sell All: {sellAllError}
         </div>
       )}
 
@@ -379,16 +456,7 @@ export default function Portfolio() {
           <span className="text-2xl font-bold">{loading ? '—' : buyingPower}</span>
           <span className="text-xs text-gray-400 dark:text-gray-600">Available</span>
         </div>
-        <div className={`${CARD} p-4 flex flex-col gap-1 min-w-0`}>
-          <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500 mb-1">
-            <TrendingUp size={14} />
-            <span className="text-xs uppercase tracking-wider font-medium">Total gain</span>
-          </div>
-          <span className={`text-2xl font-bold ${!loading && gainPositive ? 'text-[#e07a5f]' : 'text-gray-500 dark:text-gray-400'}`}>
-            {loading ? '—' : totalGainFmt}
-          </span>
-          <span className="text-xs text-gray-400 dark:text-gray-600">Unrealized + realized</span>
-        </div>
+        <StatCard icon={BadgeDollarSign} label="Exchange fees paid" value={exchangeFeesPaid == null ? '—' : fmt(exchangeFeesPaid)} sub="Total exchange fees" />
         <StatCard icon={BadgeDollarSign} label="Broker fees paid" value={feesPaid == null ? '—' : fmt(feesPaid)} sub="Total platform fees" />
       </div>
 

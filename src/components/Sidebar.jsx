@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Search,
   UserCircle,
+  Zap,
   X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +22,7 @@ const menuItems = [
   { name: 'Portfolio', icon: PieChart, path: '/portfolio' },
   { name: 'Orders', icon: ClipboardList, path: '/orders' },
   { name: 'Research', icon: Search, path: '/research' },
+  { name: 'Bot', icon: Zap, path: '/bot' },
   { name: 'Account', icon: UserCircle, path: '/account' },
 ];
 

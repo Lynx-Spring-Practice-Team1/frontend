@@ -28,14 +28,6 @@ export default function LoginForm({ form, onChange, showPw, onTogglePw, onSubmit
         }}
       />
 
-      <div className="flex justify-end -mt-1">
-        <button
-          type="button"
-          className="text-xs font-mono text-[#999] dark:text-[#555] hover:text-[#d9774a] dark:hover:text-[#d9774a] transition-colors"
-        >
-          Forgot password?
-        </button>
-      </div>
 
       <button
         type="submit"
