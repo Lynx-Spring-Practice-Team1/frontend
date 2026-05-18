@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import TradingChart from '../components/TradingChart';
 import OrderPanel from '../components/OrderPanel';
 import TodayActivity from '../components/orders/TodayActivity.jsx';
@@ -57,7 +57,7 @@ export default function Trade({ isDark }) {
 
     const [positions, setPositions] = useState([]);
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         fetch('/api/portfolio', { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.ok ? r.json() : null)
             .then(data => data?.positions && setPositions(data.positions))

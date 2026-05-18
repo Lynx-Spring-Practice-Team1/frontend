@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMarketData } from '../context/useMarketData';
 import AllocationCard from '../components/dashboard/Alocation';
 import PortfolioValue from '../components/dashboard/PortfolioValue';
@@ -37,7 +37,7 @@ export default function Dashboard() {
     const [portfolio, setPortfolio] = useState(null);
 
     const loadPortfolio = () => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         fetch('/api/portfolio', { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.ok ? r.json() : null)
             .then(data => data && setPortfolio(data))
@@ -81,7 +81,7 @@ export default function Dashboard() {
     const historyRef = useRef(null);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         fetch('/api/portfolio/equity-snapshots', { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.ok ? r.json() : [])
             .then(rows => {
@@ -101,7 +101,7 @@ export default function Dashboard() {
         const next = [...historyRef.current, { time, value: equity }].slice(-10);
         historyRef.current = next;
         setChartData([...next]);
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         fetch('/api/portfolio/equity-snapshots', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

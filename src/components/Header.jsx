@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { Menu, Search, Sun, Moon, UserCircle, LogOut, AreaChart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,7 +18,7 @@ export default function Header({ isDark, onToggleDark, onOpenMobileMenu }) {
   }, []);
 
   function handleSignOut() {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     navigate('/login');
   }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
@@ -89,18 +89,18 @@ export default function Account() {
   const [profileMessage, setProfileMessage] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
 
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const tokenPayload = useMemo(() => decodeToken(token), [token]);
   const tokenExpiresAt = tokenPayload?.exp ? new Date(tokenPayload.exp * 1000) : null;
 
   const handleUnauthorized = useCallback(() => {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     navigate('/login', { replace: true });
   }, [navigate]);
 
   const request = useCallback(async (path, options = {}) => {
     const headers = {
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
+      Authorization: `Bearer ${sessionStorage.getItem('token')}`,
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       ...options.headers,
     };
@@ -222,7 +222,7 @@ export default function Account() {
   };
 
   const signOut = () => {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     navigate('/login', { replace: true });
   };
 

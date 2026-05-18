@@ -1,12 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 import { DEFAULT_TICKERS, fetchCandles } from './marketDataApi';
 import { MarketDataContext } from './marketDataContext';
 
-function buildWsUrl() {
-  const token = localStorage.getItem('token');
+async function buildWsUrl() {
+  const token = sessionStorage.getItem('token');
   if (!token) return null;
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${window.location.host}/api/ws?token=${encodeURIComponent(token)}`;
+  try {
+    const res = await fetch('/api/ws-ticket', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const { ticket } = await res.json();
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/api/ws?ticket=${encodeURIComponent(ticket)}`;
+  } catch {
+    return null;
+  }
 }
 
 const CANDLE_INTERVAL_SEC = 300; // 5-min candles
@@ -17,20 +26,13 @@ function bucketTime(marketTime) {
   return Math.floor(sec / CANDLE_INTERVAL_SEC) * CANDLE_INTERVAL_SEC;
 }
 
-async function upsertCandle(ticker, candle) {
-  try {
-    await fetch('/api/candles', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, ...candle }),
-    });
-  } catch {
-    // Backend unavailable - silently ignore chart persistence.
-  }
+async function upsertCandle(_ticker, _candle) {
+  // Candle persistence is handled server-side by the price-history-service consumer.
+  // The browser no longer writes directly to the candle store.
 }
 
 function authHeaders() {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -103,8 +105,8 @@ export function MarketDataProvider({ children }) {
     let reconnectTimer = null;
     let active = true;
 
-    function connect() {
-      const url = buildWsUrl();
+    async function connect() {
+      const url = await buildWsUrl();
       if (!url) return;
       ws = new WebSocket(url);
 

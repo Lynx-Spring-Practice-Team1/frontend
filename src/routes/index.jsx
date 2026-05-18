@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+﻿import { Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from '../pages/Dashboard';
 import Trade from '../pages/Trade';
 import Watchlist from '../pages/Watchlist';
@@ -9,7 +9,7 @@ import Account from '../pages/Account';
 import AuthPage from '../pages/AuthPage';
 
 function ProtectedRoute({ element }) {
-  return localStorage.getItem('token') ? element : <Navigate to="/login" replace />;
+  return sessionStorage.getItem('token') ? element : <Navigate to="/login" replace />;
 }
 
 export default function AppRoutes({ isDark }) {

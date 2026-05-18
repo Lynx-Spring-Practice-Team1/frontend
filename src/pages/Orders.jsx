@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { ACTIVE_STATUSES } from '../components/orders/constants.js';
 import useOrders from '../components/orders/useOrders.js';
 import StatCard from '../components/orders/StatCard.jsx';
@@ -38,7 +38,7 @@ export default function Orders({ isDark = false }) {
     // Fetch portfolio positions so OrderPanel can validate SELL orders
     const [positions, setPositions] = useState([]);
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         fetch('/api/portfolio', { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.ok ? r.json() : null)
             .then(data => data?.positions && setPositions(data.positions))

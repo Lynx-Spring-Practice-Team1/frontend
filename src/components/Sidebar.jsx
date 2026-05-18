@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import logoSrc from '../assets/t1b.webp';
 import { NavLink } from 'react-router-dom';
 import { useMarketData } from '../context/useMarketData';
@@ -79,7 +79,7 @@ function Sidebar({ mobileOpen = false, onCloseMobile }) {
   const { lastOrderUpdate } = useMarketData();
 
   const loadCash = useCallback(() => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
     fetch('/api/portfolio', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)

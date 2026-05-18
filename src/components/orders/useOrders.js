@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+﻿import { useCallback, useEffect, useState } from 'react';
 import { useMarketData } from '../../context/useMarketData';
 
 function authHeaders(json = false) {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   return {
     ...(json ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

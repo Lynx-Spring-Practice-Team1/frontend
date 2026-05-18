@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { variants } from '../components/auth/authConstants'
@@ -56,8 +56,8 @@ export default function AuthPage() {
     if (!form.email || !isValidEmail(form.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    if (!form.password || form.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    if (!form.password || form.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
     }
     if (form.password !== form.confirm) {
       newErrors.confirm = 'Passwords do not match';
@@ -95,9 +95,11 @@ export default function AuthPage() {
 
     const data = await response.json();
 
-    if (response.ok) {
-      localStorage.setItem('token', data.access_token);
+    if (response.ok && data.access_token) {
+      sessionStorage.setItem('token', data.access_token);
       navigate('/dashboard');
+    } else if (response.ok) {
+      setErrors({ server: data.message || 'Registration processed. Please sign in.' });
     } else {
       const msg = typeof data.detail === 'string'
         ? data.detail

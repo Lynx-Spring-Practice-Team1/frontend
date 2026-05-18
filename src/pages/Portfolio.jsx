@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, memo } from 'react';
+﻿import { useState, useEffect, useRef, useMemo, memo } from 'react';
 import { useMarketData } from '../context/useMarketData';
 import { TrendingUp, Wallet, BadgeDollarSign, Plus, Download, RefreshCw } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
@@ -73,7 +73,7 @@ function TransactionModal({ type, isOpen, onClose, onSuccess }) {
 
     setSubmitting(true);
     setError(null);
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     const endpoint = type === 'deposit' ? '/api/wallet/deposit' : '/api/wallet/withdraw';
     try {
       const res = await fetch(endpoint, {
@@ -167,7 +167,7 @@ export default function Portfolio() {
   const load = () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     fetch('/api/portfolio', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(r => { console.log('Portfolio data:', r); return r; })
@@ -189,7 +189,7 @@ export default function Portfolio() {
 
   // Load existing snapshots from DB on mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     fetch('/api/portfolio/equity-snapshots', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : [])
       .then(rows => {
@@ -211,7 +211,7 @@ export default function Portfolio() {
     equityHistoryRef.current = next;
     setPerformanceData([...next]);
     // Persist to DB
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     fetch('/api/portfolio/equity-snapshots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -273,7 +273,7 @@ export default function Portfolio() {
     }
     setSellSubmitting(true);
     setSellError(null);
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     try {
       const res = await fetch('/api/orders/', {
         method: 'POST',
@@ -298,7 +298,7 @@ export default function Portfolio() {
   const [feeRate, setFeeRate] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     fetch('/api/orders/my-fees', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(data => data && setFeesPaid(data.total_fees_paid))
@@ -306,7 +306,7 @@ export default function Portfolio() {
   }, [lastOrderUpdate]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     fetch('/api/orders/fees', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(data => data && setFeeRate(parseFloat(data.platform_fee_rate)))
